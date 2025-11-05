@@ -1,0 +1,23 @@
+# Prolog
+*.qlf
+*.exe
+*.so
+*.o
+*.dylib
+
+# Emacs/Prelude
+*~
+\#*\#
+.\#*
+.dir-locals.el
+*.elc
+auto-save-list
+tramp
+.\#*
+projectile-bookmarks.eld
+projectile.cache
+
+# Logs et temporaires
+*.log
+*.tmp
+.DS_Store
