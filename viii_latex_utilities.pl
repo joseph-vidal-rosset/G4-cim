@@ -6,7 +6,7 @@
 % RENDERING PRIMITIVES
 % =========================================================================
 
-% render_hypo/7: Affiche une hypothèse en Fitch style
+% render_hypo/7: Affiche une hypothese en Fitch style
 /*
 render_hypo(O, X, L, J, K, U, V) :-
     render_lineno(J, K),
@@ -27,7 +27,7 @@ render_hypo(Scope, Formula, Label, _CurLine, _NextLine, VarIn, VarOut) :-
     write('\\\\'), nl.
 
 
-% render_fitch_indent/1: Génère l'indentation Fitch (\\fa)
+% render_fitch_indent/1: Genere l'indentation Fitch (\\fa)
 
 render_fitch_indent(0) :- !.
 
@@ -48,7 +48,7 @@ render_have(O, X, L, J, K, U, V) :-
 
 render_have(Scope, Formula, Just, _CurLine, _NextLine, VarIn, VarOut) :-
     render_fitch_indent(Scope),
-    % Toujours écrire \fa au niveau 0 (pour les séquents)
+    % Toujours ecrire \fa au niveau 0 (pour les sequents)
     ( Scope = 0 -> write('\\fa ') ; true ),
     rewrite(Formula, VarIn, VarOut, LatexFormula),
     write_formula_with_parens(LatexFormula),
@@ -104,7 +104,7 @@ render_label(L) :-
     write('\\'), write('\\\n').
 
 % =========================================================================
-% RÈGLE SIMPLE : (Antécédent) => (Conséquent) sauf pour les atomes
+% REGLE SIMPLE : (Antecedent) => (Consequent) sauf pour les atomes
 % =========================================================================
 
 % Test si une formule est atomique
@@ -112,10 +112,10 @@ is_atomic_formula(Formula) :-
     atomic(Formula).
 
 % -------------------------------------------------------------------------
-% NOUVEAU : Test si une formule est une négation (au sens de l'affichage LaTeX)
-% Une formule négative est représentée comme (' \\lnot ' X) par rewrite/4.
-% Nous voulons considérer toute formule commençant par ' \\lnot ' comme
-% "non-parenthésable" - i.e. ne PAS entourer par des parenthèses externe.
+% NOUVEAU : Test si une formule est une negation (au sens de l'affichage LaTeX)
+% Une formule negative est representee comme (' \\lnot ' X) par rewrite/4.
+% Nous voulons considerer toute formule commencant par ' \\lnot ' comme
+% "non-parenthesable" - i.e. ne PAS entourer par des parentheses externe.
 % -------------------------------------------------------------------------
 is_negative_formula((' \\lnot ' _)) :- !.
 
@@ -125,7 +125,7 @@ is_atomic_or_negative_formula(F) :-
     is_negative_formula(F).
 
 % =========================================================================
-% TEST SI LE CORPS D'UN QUANTIFICATEUR NÉCESSITE PARENTHÈSES
+% TEST SI LE CORPS D'UN QUANTIFICATEUR NECESSITE PARENTHESES
 % =========================================================================
 
 quantifier_body_needs_parens((_ ' \\to ' _)) :- !.
@@ -142,10 +142,10 @@ quantifier_body_needs_parens(Body) :-
     ; Body = (_ ' \\leftrightarrow ' _)
     ).
 % =========================================================================
-% TOUTES LES CLAUSES DE write_formula_with_parens/1 GROUPÉES
+% TOUTES LES CLAUSES DE write_formula_with_parens/1 GROUPEES
 % =========================================================================
 
-% Écriture d'une implication avec parenthèses intelligentes
+% Ecriture d'une implication avec parentheses intelligentes
 write_formula_with_parens((A ' \\to ' B)) :-
     !,
     write_implication_with_parens(A, B).
@@ -153,7 +153,7 @@ write_formula_with_parens((A ' \\to ' B)) :-
 write_formula_with_parens('='(A, B)) :- !,
     write('('), write_formula_with_parens(A), write(' = '), write_formula_with_parens(B), write(')').
 
-% Autres opérateurs
+% Autres operateurs
 write_formula_with_parens((A ' \\lor ' B)) :-
     !,
     write_with_context(A, 'lor_left'),
@@ -177,7 +177,7 @@ write_formula_with_parens((' \\lnot ' A)) :-
     write(' \\lnot '),
     write_with_context(A, 'not').
 
-% QUANTIFICATEURS AVEC PARENTHÈSES INTELLIGENTES
+% QUANTIFICATEURS AVEC PARENTHESES INTELLIGENTES
 write_formula_with_parens((' \\forall ' X ' ' A)) :-
     !,
     write(' \\forall '),
@@ -206,11 +206,11 @@ write_formula_with_parens(Other) :-
     write(Other).
 
 % =========================================================================
-% FONCTION SPÉCIALISÉE POUR IMPLICATIONS
+% FONCTION SPECIALISEE POUR IMPLICATIONS
 % =========================================================================
 
 write_implication_with_parens(Antecedent, Consequent) :-
-    % Antécédent : ne pas parenthéser s'il est atomique OU une formule négative
+    % Antecedent : ne pas parentheser s'il est atomique OU une formule negative
     ( is_atomic_or_negative_formula(Antecedent) ->
         write_formula_with_parens(Antecedent)
     ;
@@ -219,10 +219,10 @@ write_implication_with_parens(Antecedent, Consequent) :-
         write(')')
     ),
     write(' \\to '),
-    % Conséquent : parenthéser sauf si atomique OU formule négative
-    % NOTE: on considère toute forme (' \\lnot ' _) comme "négative" même si
-    % elle contient plusieurs négations imbriquées (¬¬¬A). Dans ce cas on ne
-    % met JAMAIS de parenthèses externes autour de la négation.
+    % Consequent : parentheser sauf si atomique OU formule negative
+    % NOTE: on considere toute forme (' \\lnot ' _) comme "negative" meme si
+    % elle contient plusieurs negations imbriquees (!!!A). Dans ce cas on ne
+    % met JAMAIS de parentheses externes autour de la negation.
     ( is_atomic_or_negative_formula(Consequent) ->
         write_formula_with_parens(Consequent)
     ;
@@ -232,7 +232,7 @@ write_implication_with_parens(Antecedent, Consequent) :-
     ).
 
 % =========================================================================
-% TOUTES LES CLAUSES DE write_with_context/2 GROUPÉES
+% TOUTES LES CLAUSES DE write_with_context/2 GROUPEES
 % =========================================================================
 
 % IMPLICATIONS dans tous les contextes - utiliser write_implication_with_parens
@@ -283,7 +283,7 @@ write_with_context((A ' \\land ' B), 'lor_right') :-
     write_formula_with_parens(B),
     write(')').
 
-% CONJONCTIONS dans négations
+% CONJONCTIONS dans negations
 write_with_context((A ' \\land ' B), 'not') :-
     !,
     write('('),
@@ -292,7 +292,7 @@ write_with_context((A ' \\land ' B), 'not') :-
     write_formula_with_parens(B),
     write(')').
 
-% DISJONCTIONS dans négations
+% DISJONCTIONS dans negations
 write_with_context((A ' \\lor ' B), 'not') :-
     !,
     write('('),
@@ -323,15 +323,15 @@ write_with_context(Formula, _Context) :-
     write_formula_with_parens(Formula).
 
 % =========================================================================
-% SYSTÈME BURSE adapté : rewrite direct sur formules avec opérateurs standard
-% VERSION AVEC SIMPLIFICATION ÉLÉGANTE DES PRÉDICATS
+% SYSTEME BURSE adapte : rewrite direct sur formules avec operateurs standard
+% VERSION AVEC SIMPLIFICATION ELEGANTE DES PREDICATS
 % =========================================================================
 
-% rewrite/4 - Version adaptée qui gère directement les formules
+% rewrite/4 - Version adaptee qui gere directement les formules
 rewrite(#, J, J, '\\bot') :- !.
 rewrite(# => #, J, J, '\\top') :- !.
 
-% NOUVELLE CLAUSE POUR GÉRER LES CONSTANTES DE SKOLEM
+% NOUVELLE CLAUSE POUR GERER LES CONSTANTES DE SKOLEM
 % Convertit f_sk(K,_) en un nom simple comme 'a', 'b', etc.
 rewrite(f_sk(K,_), J, J, Name) :-
     !,
@@ -343,8 +343,8 @@ rewrite(A, J, J, A_latex) :-
     !,
     toggle(A, A_latex).
 
-% Reconnaît ((A => B) & (B => A)) (ou l'ordre inverse) comme A <=> B pour l'affichage LaTeX
-% Doit être placé AVANT la clause générique rewrite((A & B), ...)
+% Reconnait ((A => B) & (B => A)) (ou l'ordre inverse) comme A <=> B pour l'affichage LaTeX
+% Doit etre place AVANT la clause generique rewrite((A & B), ...)
 rewrite((X & Y), J, K, (C ' \\leftrightarrow ' D)) :-
     % cas 1 : X = (A => B), Y = (B => A)
     ( X = (A => B), Y = (B => A)
@@ -355,37 +355,37 @@ rewrite((X & Y), J, K, (C ' \\leftrightarrow ' D)) :-
     rewrite(A, J, H, C),
     rewrite(B, H, K, D).
 
-% Conjonction avec opérateur standard &
+% Conjonction avec operateur standard &
 rewrite((A & B), J, K, (C ' \\land ' D)) :-
     !,
     rewrite(A, J, H, C),
     rewrite(B, H, K, D).
 
-% Disjonction avec opérateur standard |
+% Disjonction avec operateur standard |
 rewrite((A | B), J, K, (C ' \\lor ' D)) :-
     !,
     rewrite(A, J, H, C),
     rewrite(B, H, K, D).
 
-% AFFICHAGE COSMÉTIQUE : A => # devient ¬A
+% AFFICHAGE COSMETIQUE : A => # devient !A
 rewrite((A => #), J, K, (' \\lnot ' C)) :-
     !,
     rewrite(A, J, K, C).
 
 
-% Implication avec opérateur standard =>
+% Implication avec operateur standard =>
 rewrite((A => B), J, K, (C ' \\to ' D)) :-
     !,
     rewrite(A, J, H, C),
     rewrite(B, H, K, D).
 
-% Biconditionnelle avec opérateur standard <=>
+% Biconditionnelle avec operateur standard <=>
 rewrite((A <=> B), J, K, (C ' \\leftrightarrow ' D)) :-
     !,
     rewrite(A, J, H, C),
     rewrite(B, H, K, D).
 
-% Négation avec opérateur standard ~
+% Negation avec operateur standard ~
 rewrite((~A), J, K, (' \\lnot ' C)) :-
     !,
     rewrite(A, J, K, C).
@@ -414,8 +414,8 @@ rewrite((?[_X]:A), J, K, (' \\exists ' VarName ' ' C)) :-
     rewrite(A, J1, K, C).
 
 % =========================================================================
-% SIMPLIFICATION ÉLÉGANTE DES PRÉDICATS
-% P(x,y,z) -> Pxyz pour tous les prédicats
+% SIMPLIFICATION ELEGANTE DES PREDICATS
+% P(x,y,z) -> Pxyz pour tous les predicats
 % =========================================================================
 /*
 rewrite(Pred, J, K, SimplePred) :-
@@ -444,7 +444,7 @@ rewrite(Pred, J, K, SimplePred) :-
     rewrite_args_list(Args, J, K, SimpleArgs),
     concatenate_all([G|SimpleArgs], SimplePred).
 
-% PRÉDICATS ET TERMES (clause générale)
+% PREDICATS ET TERMES (clause generale)
 rewrite(X, J, K, Y) :-
     X =.. [F|L],
     toggle(F, G),
@@ -453,7 +453,7 @@ rewrite(X, J, K, Y) :-
 
 
 % =========================================================================
-% PRÉDICATS AUXILIAIRES POUR LA SIMPLIFICATION
+% PREDICATS AUXILIAIRES POUR LA SIMPLIFICATION
 % =========================================================================
 
 all_simple_terms([]).
@@ -516,7 +516,7 @@ rewrite_term(f_sk(K,_), J, J, N) :-
     rewrite_name(K, N).
 
 % NOUVEAU : Si le terme est un atome simple (constante), NE PAS le capitaliser
-% Car il est argument d'un prédicat/fonction
+% Car il est argument d'un predicat/fonction
 rewrite_term(X, J, J, X) :-
     atomic(X),
     !.
@@ -526,7 +526,7 @@ rewrite_term(X, J, K, Y) :-
     rewrite_list(L, J, K, R),
     Y =.. [F|R].
 
-% Générateur de noms élégants
+% Generateur de noms elegants
 rewrite_name(K, N) :-
     K < 3,
     !,
@@ -563,7 +563,7 @@ toggle_code(X, Y) :-
 toggle_code(X, X).
 
 % =========================================================================
-% SYSTÈME PREPARE
+% SYSTEME PREPARE
 % =========================================================================
 
 prepare_sequent(PremisesList => Conclusion, PreparedPremises, PreparedConclusion) :-
@@ -666,8 +666,8 @@ lambda_has('C'(P,_,_), W) :-
 
 %%%%%% Sequents
 
-% Déterminer le type de preuve (théorème ou séquent)
-% RENOMMÉ pour éviter conflit avec proof_type/2 du driver
+% Determiner le type de preuve (theoreme ou sequent)
+% RENOMME pour eviter conflit avec proof_type/2 du driver
 % Cette fonction analyse la STRUCTURE d'une preuve G4, pas la syntaxe d'une formule
 proof_structure_type(Proof, Type) :-
     proof_premises(Proof, Premisses),
@@ -676,22 +676,22 @@ proof_structure_type(Proof, Type) :-
     ;   Type = sequent
     ).
 
-% NOTE: Si proof_structure_type est utilisée quelque part, mettre à jour les appels.
-% Actuellement, elle ne semble appelée nulle part dans ce fichier.
+% NOTE: Si proof_structure_type est utilisee quelque part, mettre a jour les appels.
+% Actuellement, elle ne semble appelee nulle part dans ce fichier.
 
-% Générer les commandes Fitch selon le type et la position
+% Generer les commandes Fitch selon le type et la position
 fitch_prefix(sequent, LineNum, TotalPremisses, Prefix) :-
     (   LineNum =< TotalPremisses 
     ->  (   LineNum = TotalPremisses 
-        ->  Prefix = '\\fj '  % Gros drapeau pour dernière prémisse
-        ;   Prefix = '\\fa '  % Ligne normale pour prémisses
+        ->  Prefix = '\\fj '  % Gros drapeau pour derniere premisse
+        ;   Prefix = '\\fa '  % Ligne normale pour premisses
         )
-    ;   Prefix = '\\fa '      % Ligne normale après les prémisses
+    ;   Prefix = '\\fa '      % Ligne normale apres les premisses
     ).
 
 fitch_prefix(theorem, Depth, _, Prefix) :-
     (   Depth > 0 
-    ->  Prefix = '\\fa \\fh '  % Petit drapeau pour hypothèses
+    ->  Prefix = '\\fa \\fh '  % Petit drapeau pour hypotheses
     ;   Prefix = '\\fa '       % Ligne normale au niveau 0
     ).
 
@@ -851,7 +851,7 @@ render_rule_name(lorto) :- write('L\\lor\\to').
 render_rule_name(ltoto) :- write('L\\to\\to').
 render_rule_name(cq_c) :- write('CQ_{c}').
 render_rule_name(cq_m) :- write('CQ_{m}').
-% Règles d'égalité → Leibniz
+% Regles d'egalite -> Leibniz
 render_rule_name(eq_subst) :- !, write('Leibniz').
 render_rule_name(eq_trans) :- !, write('Leibniz').
 render_rule_name(eq_subst_eq) :- !, write('Leibniz').

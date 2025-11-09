@@ -80,7 +80,7 @@ handle_warnings(Warnings, permissive, Formula, Formula) :-
     prompt_continue.
 handle_warnings(Warnings, strict, _, _) :-
     report_warnings(Warnings),
-    write('❌ Validation failed in strict mode. Formula rejected.'), nl,
+    write('? Validation failed in strict mode. Formula rejected.'), nl,
     fail.
 
 % Prompt user to continue
@@ -89,13 +89,13 @@ prompt_continue :-
     read(Response),
     (   Response = y -> true
     ;   Response = yes -> true
-    ;   write('❌ Proof attempt cancelled.'), nl, fail
+    ;   write('? Proof attempt cancelled.'), nl, fail
     ).
 % =========================================================================
 % FOL CONTEXT DETECTION
 % =========================================================================
 % A formula is in FOL context if it contains:
-%   - Quantifiers (∀, ∃)
+%   - Quantifiers (?, ?)
 %   - Predicate applications p(t1,...,tn) with n > 0
 %   - Equality between terms
 %   - Function symbols (including Skolem functions)
@@ -261,44 +261,44 @@ report_warnings([]) :- !.
 report_warnings(Warnings) :-
     length(Warnings, N),
     nl,
-    format('⚠️  ~d WARNING(S) DETECTED:~n', [N]),
+    format('?  ~d WARNING(S) DETECTED:~n', [N]),
     nl,
     maplist(print_warning, Warnings),
     nl,
-    write('💡 TIPS:'), nl,
-    write('   • Theorems:  prove(p => q).        % implication'), nl,
-    write('   • Sequents:  prove([p] > [q]).     % turnstile ⊢'), nl,
-    write('   • FOL:       use = for equality, <=> for biconditional'), nl,
+    write('? TIPS:'), nl,
+    write('   o Theorems:  prove(p => q).        % implication'), nl,
+    write('   o Sequents:  prove([p] > [q]).     % turnstile ?'), nl,
+    write('   o FOL:       use = for equality, <=> for biconditional'), nl,
     nl.
 
 print_warning(warning(bicond_between_terms, A, B)) :-
-    format('   ⚠️  (~w <=> ~w): biconditional between terms detected.~n', [A, B]),
-    format('      → Did you mean (~w = ~w)?~n', [A, B]).
+    format('   ?  (~w <=> ~w): biconditional between terms detected.~n', [A, B]),
+    format('      -> Did you mean (~w = ~w)?~n', [A, B]).
 
 % NEW: Sequent syntax warnings
 print_warning(warning(list_implication, Msg)) :-
-    format('   ⚠️  Syntax error: ~w~n', [Msg]),
+    format('   ?  Syntax error: ~w~n', [Msg]),
     write('      Example: prove([p, q] > [p & q]).  % CORRECT'), nl,
     write('               prove([p, q] => [p & q]). % WRONG'), nl.
 
 print_warning(warning(list_implication_left, Msg)) :-
-    format('   ⚠️  Syntax error: ~w~n', [Msg]),
-    write('      → Use [Premises] > [Conclusion] for sequents'), nl.
+    format('   ?  Syntax error: ~w~n', [Msg]),
+    write('      -> Use [Premises] > [Conclusion] for sequents'), nl.
 
 print_warning(warning(list_implication_right, Msg)) :-
-    format('   ⚠️  Syntax error: ~w~n', [Msg]),
-    write('      → Use [Premises] > [Conclusion] for sequents'), nl.
+    format('   ?  Syntax error: ~w~n', [Msg]),
+    write('      -> Use [Premises] > [Conclusion] for sequents'), nl.
 
 print_warning(warning(atom_turnstile, Msg)) :-
-    format('   ⚠️  Syntax error: ~w~n', [Msg]),
+    format('   ?  Syntax error: ~w~n', [Msg]),
     write('      Example: prove(p => q).       % CORRECT (implication)'), nl,
     write('               prove(p > q).        % WRONG'), nl,
     write('               prove([p] > [q]).    % CORRECT (sequent)'), nl.
 
 print_warning(warning(formula_turnstile, Msg)) :-
-    format('   ⚠️  Syntax error: ~w~n', [Msg]),
-    write('      → Use => for implications, > only for sequents'), nl,
-    write('      → Sequent syntax: [Premises] > [Conclusions]'), nl.
+    format('   ?  Syntax error: ~w~n', [Msg]),
+    write('      -> Use => for implications, > only for sequents'), nl,
+    write('      -> Sequent syntax: [Premises] > [Conclusions]'), nl.
 
 % =========================================================================
 % UTILITY: AUTO-SUGGESTION (optional feature)

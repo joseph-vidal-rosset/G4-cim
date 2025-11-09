@@ -28,10 +28,10 @@
 
 show_banner :-
     nl,
-    write('╔═══════════════════════════════════════════════════════════════╗'), nl,
-    write('║                   G4 F.O.L. PROVER  -  1.0                    ║'), nl,
-    write('║            Minimal,  Intuitionistic and Classical Logic       ║'), nl,
-    write('╚═══════════════════════════════════════════════════════════════╝'), nl,
+    write('?????????????????????????????????????????????????????????????????'), nl,
+    write('?                   G4 F.O.L. PROVER  -  1.0                    ?'), nl,
+    write('?            Minimal,  Intuitionistic and Classical Logic       ?'), nl,
+    write('?????????????????????????????????????????????????????????????????'), nl,
     nl,
     write('  help. to get help'), nl,
     write('  quickref. =  quick reference '), nl,
@@ -46,7 +46,7 @@ show_banner :-
 logic_iteration_limit(constructive, 3).
 logic_iteration_limit(classical, 15).
 logic_iteration_limit(minimal, 3).
-logic_iteration_limit(intuitionistic, 3).
+logic_iteration_limit(intuitionistic, 5).
 logic_iteration_limit(fol, 15).
 
 % =========================================================================
@@ -57,7 +57,7 @@ for(I, M, N) :- M =< N, I = M.
 for(I, M, N) :- M < N, M1 is M+1, for(I, M1, N).
 
 % =========================================================================
-% DÉTECTION THÉORÈME vs SÉQUENT (simplifié)
+% DETECTION THEOREME vs SEQUENT (simplifie)
 % =========================================================================
 
 :- dynamic current_proof_sequent/1.
@@ -196,11 +196,11 @@ is_fol_structural_pattern((_) => ?[_-_]:(_ & ![_-_]:(_ | _))) :- !.
 % MAIN INTERFACE: prove/1
 % =========================================================================
 
-% NOUVEAU : Détection automatique pour séquents avec prémisses
+% NOUVEAU : Detection automatique pour sequents avec premisses
 prove(G > D) :-
-    G \= [],  % Prémisses non vides = SEQUENT
+    G \= [],  % Premisses non vides = SEQUENT
     !,
-     % ✅ VALIDATION : Vérifier les prémisses et la conclusion
+     % ? VALIDATION : Verifier les premisses et la conclusion
     validate_sequent_formulas(G, D),
     statistics(runtime, [_T0|_]),
     write('------------------------------------------'), nl,
@@ -210,53 +210,53 @@ prove(G > D) :-
     write('MODE: Sequent (with premises)'), nl,
     nl,
     
-    % Stocker les prémisses pour l'affichage
+    % Stocker les premisses pour l'affichage
     retractall(premise_list(_)),
     assertz(premise_list(G)),
     retractall(current_proof_sequent(_)),
     assertz(current_proof_sequent(G > D)),
     
-    % Préparer les formules
+    % Preparer les formules
     copy_term((G > D), (GCopy > DCopy)),
     prepare_sequent_formulas(GCopy, DCopy, PrepG, PrepD),
     
-    % Détecter pattern classique dans la conclusion
+    % Detecter pattern classique dans la conclusion
     ( DCopy = [SingleGoal], is_classical_pattern(SingleGoal) ->
         write('=== CLASSICAL PATTERN DETECTED ==='), nl,
-        write('    → Using classical logic'), nl,
+        write('    -> Using classical logic'), nl,
         time(provable_at_level(PrepG > PrepD, classical, Proof)),
         Logic = classical,
         OutputProof = Proof
     ;
-        write('=== PHASE 1: Trying Minimal → Intuitionistic → Classical ==='), nl,
+        write('=== PHASE 1: Trying Minimal -> Intuitionistic -> Classical ==='), nl,
         ( time(provable_at_level(PrepG > PrepD, minimal, Proof)) ->
-            write('  ✓ Constructive proof found in MINIMAL LOGIC '), nl,
+            write('  ? Constructive proof found in MINIMAL LOGIC '), nl,
             Logic = minimal,
             OutputProof = Proof
         ; time(provable_at_level(PrepG > PrepD, constructive, Proof)) ->
-            write('  ✓ Constructive proof found'), nl,
+            write('  ? Constructive proof found'), nl,
             ( proof_uses_lbot(Proof) ->
-                write(' ✓ Constructive proof found in INTUITIONISTIC LOGIC'), nl,
+                write(' ? Constructive proof found in INTUITIONISTIC LOGIC'), nl,
                 Logic = intuitionistic
             ;
-                write('  → No explosion → INTUITIONISTIC'), nl,
+                write('  -> No explosion -> INTUITIONISTIC'), nl,
                 Logic = intuitionistic
             ),
             OutputProof = Proof
         ;
-            write('  ✗ Constructive logic failed'), nl,
+            write('  ? Constructive logic failed'), nl,
             write('=== TRYING CLASSICAL LOGIC ==='), nl,
             time(provable_at_level(PrepG > PrepD, classical, Proof)),
-            write('  ✓ Proof found in CLASSICAL LOGIC '), nl,
+            write('  ? Proof found in CLASSICAL LOGIC '), nl,
             Logic = classical,
             OutputProof = Proof
         )
     ),
     output_proof_results(OutputProof, Logic, G > D, sequent).
 
-% Biconditionals - REGROUPÉS PAR TYPE
+% Biconditionals - REGROUPES PAR TYPE
 prove(Left <=> Right) :- !,
-         % ✅ VALIDATION : Vérifier les deux directions
+         % ? VALIDATION : Verifier les deux directions
     validate_and_warn(Left, _),
     validate_and_warn(Right, _),
     retractall(current_proof_sequent(_)),
@@ -310,9 +310,9 @@ prove(Left <=> Right) :- !,
     !.
 
 
-% Equivalence de séquents: [A] <> [B] prouve [A] > [B] ET [B] > [A]
+% Equivalence de sequents: [A] <> [B] prouve [A] > [B] ET [B] > [A]
 prove([Left] <> [Right]) :- !,
-          % ✅ VALIDATION : Vérifier les deux formules
+          % ? VALIDATION : Verifier les deux formules
     validate_and_warn(Left, _),
     validate_and_warn(Right, _),
     retractall(current_proof_sequent(_)),
@@ -375,15 +375,15 @@ prove([Left] <> [Right]) :- !,
     write('Q.E.D.'), nl, nl,
     
     write('This sequent equivalence is valid:'), nl,
-    write('- Direction 1 ('), write(Left), write(' ⊢ '), write(Right), write(')'),  
+    write('- Direction 1 ('), write(Left), write(' ? '), write(Right), write(')'),  
     write(' is valid in '), write(Logic1), write(' logic'), nl,
-    write('- Direction 2 ('), write(Right), write(' ⊢ '), write(Left), write(')'),
+    write('- Direction 2 ('), write(Right), write(' ? '), write(Left), write(')'),
     write(' is valid in '), write(Logic2), write(' logic.'), nl,
     !.
 
 % Theorems (original logic)
 prove(Formula) :-
-         % ✅ VALIDATION : Vérifier la formule
+         % ? VALIDATION : Verifier la formule
     validate_and_warn(Formula, _ValidatedFormula),
     statistics(runtime, [_T0|_]),
     write('------------------------------------------'), nl,
@@ -402,59 +402,59 @@ prove(Formula) :-
     
     (   F2 = ((A => #) => #), A \= (_ => #)  ->
         write('=== DOUBLE NEGATION DETECTED ==='), nl,
-        write('    → Trying constructive first'), nl,
+        write('    -> Trying constructive first'), nl,
         write('=== TRYING CONSTRUCTIVE LOGIC ==='), nl,
         ( time(provable_at_level([] > [F2], constructive, Proof)) ->
-            write('  ✓ Constructive proof found'), nl,
+            write('  ? Constructive proof found'), nl,
             ( time(provable_at_level([] > [F2], minimal, _)) ->
-                write(' ✓ Constructive proof found in MINIMAL LOGIC'), nl,
+                write(' ? Constructive proof found in MINIMAL LOGIC'), nl,
                 Logic = minimal,
                 OutputProof = Proof
             ;
                 ( proof_uses_lbot(Proof) ->
-                    write(' ✓ Constructive proof found in INTUITIONISTIC LOGIC'), nl,
+                    write(' ? Constructive proof found in INTUITIONISTIC LOGIC'), nl,
                     Logic = intuitionistic,
                     OutputProof = Proof
                 )
             )
         ;
-            write('  ✗ Constructive failed'), nl,
+            write('  ? Constructive failed'), nl,
             write('=== FALLBACK: CLASSICAL LOGIC ==='), nl,
             time(provable_at_level([] > [F2], classical, Proof)),
-            write('  ✓ Classical proof found'), nl,
+            write('  ? Classical proof found'), nl,
             Logic = classical,
             OutputProof = Proof
         )
     ; is_classical_pattern(F2) ->
         write('=== CLASSICAL PATTERN DETECTED ==='), nl,
-        write('    → Skipping constructive logic'), nl,
+        write('    -> Skipping constructive logic'), nl,
         write('=== TRYING CLASSICAL LOGIC ==='), nl,
         time(provable_at_level([] > [F2], classical, Proof)),
-        write('  ✓ Classical proof found'), nl,
+        write('  ? Classical proof found'), nl,
         Logic = classical,
         OutputProof = Proof
     ;
-        write('=== PHASE 1: Trying Minimal → Intuitionistic → Classical ==='), nl,
+        write('=== PHASE 1: Trying Minimal -> Intuitionistic -> Classical ==='), nl,
         ( time(provable_at_level([] > [F2], minimal, Proof)) ->
-            write('  ✓ Minimal proof found → MINIMAL'), nl,
+            write('  ? Minimal proof found -> MINIMAL'), nl,
             Logic = minimal,
             OutputProof = Proof
         ; time(provable_at_level([] > [F2], constructive, Proof)) ->
-            write('  ✓ Constructive proof found'), nl,
+            write('  ? Constructive proof found'), nl,
             ( proof_uses_lbot(Proof) ->
-                write('  → Uses explosion (⊥E) → INTUITIONISTIC'), nl,
+                write('  -> Uses explosion (?E) -> INTUITIONISTIC'), nl,
                 Logic = intuitionistic,
                 OutputProof = Proof
             ;
-                write('  → No explosion → INTUITIONISTIC'), nl,
+                write('  -> No explosion -> INTUITIONISTIC'), nl,
                 Logic = intuitionistic,
                 OutputProof = Proof
             )
         ;
-            write('  ✗ Constructive failed'), nl,
+            write('  ? Constructive failed'), nl,
             write('=== TRYING CLASSICAL LOGIC ==='), nl,
             time(provable_at_level([] > [F2], classical, Proof)),
-            write('  ✓ Classical proof found'), nl,
+            write('  ? Classical proof found'), nl,
             Logic = classical,
             OutputProof = Proof
         )
@@ -465,7 +465,7 @@ prove(Formula) :-
 % HELPERS
 % =========================================================================
 
-% Préparer une liste de formules
+% Preparer une liste de formules
 prepare_sequent_formulas(GIn, DIn, GOut, DOut) :-
     maplist(prepare_and_subst, GIn, GOut),
     maplist(prepare_and_subst, DIn, DOut).
@@ -475,24 +475,24 @@ prepare_and_subst(F, FOut) :-
     subst_neg(F0, F1),
     subst_bicond(F1, FOut).
 
-% Affichage compact d'un séquent
-write_sequent_compact([], [D]) :- !, write('⊢ '), write(D).
-write_sequent_compact([G], [D]) :- !, write(G), write(' ⊢ '), write(D).
+% Affichage compact d'un sequent
+write_sequent_compact([], [D]) :- !, write('? '), write(D).
+write_sequent_compact([G], [D]) :- !, write(G), write(' ? '), write(D).
 write_sequent_compact(G, [D]) :-
     write_list_compact(G),
-    write(' ⊢ '),
+    write(' ? '),
     write(D).
 
 write_list_compact([X]) :- !, write(X).
 write_list_compact([X|Xs]) :- write(X), write(', '), write_list_compact(Xs).
 
 % =========================================================================
-% VALIDATION DES FORMULES ET SÉQUENTS
+% VALIDATION DES FORMULES ET SEQUENTS
 % =========================================================================
 
-% Valider un séquent (prémisses + conclusions)
+% Valider un sequent (premisses + conclusions)
 validate_sequent_formulas(G, D) :-
-    % Valider toutes les prémisses
+    % Valider toutes les premisses
     forall(member(Premise, G), validate_and_warn(Premise, _)),
     % Valider toutes les conclusions
     forall(member(Conclusion, D), validate_and_warn(Conclusion, _)).
@@ -558,9 +558,9 @@ progressive_proof_silent(Formula, Proof, Logic) :-
     ).
 
 % =========================================================================
-% PROVABILITY AT A GIVEN LEVEL (simplifié)
+% PROVABILITY AT A GIVEN LEVEL (simplifie)
 % =========================================================================
-
+/*
 provable_at_level(Sequent, constructive, P) :-
     !,
     logic_iteration_limit(constructive, MaxIter),
@@ -568,12 +568,33 @@ provable_at_level(Sequent, constructive, P) :-
     Sequent = (G > D),
     prove(G > D, [], I, 1, _, intuitionistic, P),
     !.
+*/
+provable_at_level(Sequent, constructive, P) :-
+    !,
+    logic_iteration_limit(constructive, MaxIter),
+    for(I, 0, MaxIter),
+    Sequent = (G > D),
+    ( prove(G > D, [], I, 1, _, minimal, P) -> true    % <- Essayer minimal d'abord
+    ; prove(G > D, [], I, 1, _, intuitionistic, P)     % <- Puis intuitionistic si echec
+    ),
+    !.
 
 provable_at_level(Sequent, LogicLevel, P) :-
     logic_iteration_limit(LogicLevel, MaxIter),
     for(I, 0, MaxIter),
     Sequent = (G > D),
     prove(G > D, [], I, 1, _, LogicLevel, P),
+    !.
+
+
+provable_at_level(Sequent, constructive, P) :-
+    !,
+    logic_iteration_limit(constructive, MaxIter),
+    for(I, 0, MaxIter),
+    Sequent = (G > D),
+    ( prove(G > D, [], I, 1, _, minimal, P) -> true    % <- Essayer minimal d'abord
+    ; prove(G > D, [], I, 1, _, intuitionistic, P)     % <- Puis intuitionistic si echec
+    ),
     !.
 
 % =========================================================================
@@ -617,7 +638,7 @@ proof_uses_lbot(Term) :-
 % =========================================================================
 
 decide(Left <=> Right) :- !,
-         % ✅ VALIDATION
+         % ? VALIDATION
     validate_and_warn(Left, _),
     validate_and_warn(Right, _),
     time((
@@ -641,7 +662,7 @@ decide(Formula) :-
 % decide/1 for sequents
 decide(G > D) :-
     G \= [], !,
-       % ✅ VALIDATION
+       % ? VALIDATION
     validate_sequent_formulas(G, D),
     copy_term((G > D), (GCopy > DCopy)),
     prepare_sequent_formulas(GCopy, DCopy, PrepG, PrepD),
@@ -661,7 +682,7 @@ decide(G > D) :-
 
 % Equivalence pour decide
 decide([Left] <> [Right]) :- !,
-         % ✅ VALIDATION
+         % ? VALIDATION
     validate_and_warn(Left, _),
     validate_and_warn(Right, _),
     time((
@@ -676,51 +697,51 @@ decide([Left] <> [Right]) :- !,
 
 help :-
     nl,
-    write('╔═══════════════════════════════════════════════════════════════╗'), nl,
-    write('║                      G4 PROVER GUIDE                          ║'), nl,
-    write('╚═══════════════════════════════════════════════════════════════╝'), nl,
+    write('?????????????????????????????????????????????????????????????????'), nl,
+    write('?                      G4 PROVER GUIDE                          ?'), nl,
+    write('?????????????????????????????????????????????????????????????????'), nl,
     nl,
-    write('███ MAIN COMMANDS ███'), nl,
+    write('??? MAIN COMMANDS ???'), nl,
     nl,
     write('  prove(Formula).            - shows the proofs of Formula'), nl,
     write('  decide(Formula).           - says either true or false'), nl,
     write('  help.                      - gets help'), nl,
     write('  examples.                  - shows examples'), nl,
     nl,
-    write('███ SYNTAX EXAMPLES ███'), nl,
+    write('??? SYNTAX EXAMPLES ???'), nl,
     nl,
     write('  THEOREMS:'), nl,
     write('    prove(p => p).                    - Identity'), nl,
     write('    prove((p & q) => p).              - Conjunction elimination'), nl,
     nl,
     write('  SEQUENTS (NEW - G4 native syntax):'), nl,
-    write('    prove([p] > [p]).                 - Sequent: p ⊢ p'), nl,
-    write('    prove([p, q] > [p & q]).          - Sequent: p, q ⊢ p ∧ q'), nl,
+    write('    prove([p] > [p]).                 - Sequent: p ? p'), nl,
+    write('    prove([p, q] > [p & q]).          - Sequent: p, q ? p ? q'), nl,
     write('    prove([p => q, p] > [q]).         - Modus ponens sequent'), nl,
     nl,
     write('  BICONDITIONALS:'), nl,
     write('    prove(p <=> ~~p).                 - Double negation (classical)'), nl,
     nl,
-    write('███ COMMON MISTAKES ███'), nl,
+    write('??? COMMON MISTAKES ???'), nl,
     nl,
-    write('  ❌ [p] => [p]          - WRONG (use > for sequents)'), nl,
-    write('  ✅ [p] > [p]           - CORRECT (sequent syntax)'), nl,
+    write('  ? [p] => [p]          - WRONG (use > for sequents)'), nl,
+    write('  ? [p] > [p]           - CORRECT (sequent syntax)'), nl,
     nl,
-    write('  ❌ p > q               - WRONG (use => for implication)'), nl,
-    write('  ✅ p => q              - CORRECT (implication)'), nl,
+    write('  ? p > q               - WRONG (use => for implication)'), nl,
+    write('  ? p => q              - CORRECT (implication)'), nl,
     nl,
-    write('  ❌ x <=> y in FOL      - WRONG (use = for equality)'), nl,
-    write('  ✅ x = y in FOL        - CORRECT (equality)'), nl,
+    write('  ? x <=> y in FOL      - WRONG (use = for equality)'), nl,
+    write('  ? x = y in FOL        - CORRECT (equality)'), nl,
     nl,
-    write('███ LOGICAL OPERATORS ███'), nl,
+    write('??? LOGICAL OPERATORS ???'), nl,
     write('  ~A  A & B  A | B  A => B  A <=> B  #  ![x]:A  ?[x]:A'), nl,
     nl.
 
 examples :-
     nl,
-    write('╔════════════════════════════════════════════════════════════════╗'), nl,
-    write('║                     EXAMPLES                                  ║'), nl,
-    write('╚════════════════════════════════════════════════════════════════╝'), nl,
+    write('??????????????????????????????????????????????????????????????????'), nl,
+    write('?                     EXAMPLES                                  ?'), nl,
+    write('??????????????????????????????????????????????????????????????????'), nl,
     nl,
     write('  % Identity theorem'), nl,
     write('  ?- prove(p => p).'), nl,
@@ -740,9 +761,9 @@ examples :-
 
 quickref :-
     nl,
-    write('╔═══════════════════════════════════════════════════════════════╗'), nl,
-    write('║      QUICK REFERENCE                                          ║'), nl,
-    write('╚═══════════════════════════════════════════════════════════════╝'), nl,
+    write('?????????????????????????????????????????????????????????????????'), nl,
+    write('?      QUICK REFERENCE                                          ?'), nl,
+    write('?????????????????????????????????????????????????????????????????'), nl,
     nl,
     write('  THEOREMS: prove(Formula)'), nl,
     write('  SEQUENTS: prove([Premises] > [Conclusion])'), nl,
@@ -756,15 +777,15 @@ quickref :-
 % ============================================
 
 %! run_all_test_files
-%  Exécute l'intégralité de la suite de tests avec mesure du temps
-%  Inclut : tests unitaires, séquents FOL/Prop, Pelletier
+%  Execute l'integralite de la suite de tests avec mesure du temps
+%  Inclut : tests unitaires, sequents FOL/Prop, Pelletier
 run_all_test_files :- 
     get_time(StartTime),
     writeln(''),
-    writeln('╔════════════════════════════════════════════╗'),
-    writeln('║   START OF THE COMPLETE SERIES OF TESTS    ║'),
-    writeln('╚════════════════════════════════════════════╝'),
-    format('Démarrage : ~w~n~n', [StartTime]),
+    writeln('??????????????????????????????????????????????'),
+    writeln('?   START OF THE COMPLETE SERIES OF TESTS    ?'),
+    writeln('??????????????????????????????????????????????'),
+    format('Demarrage : ~w~n~n', [StartTime]),
     
     safe_run(run_all_tests, 'FOL Theorems'),
     safe_run(run_fol_seq, 'FOL Valid Sequents'),
@@ -775,14 +796,14 @@ run_all_test_files :-
     ElapsedTime is EndTime - StartTime,
     
     writeln(''),
-    writeln('╔════════════════════════════════════════════╗'),
-    writeln('║    END OF THE COMPLETE SERIES OF TESTS     ║'),
-    writeln('╚════════════════════════════════════════════╝'),
+    writeln('??????????????????????????????????????????????'),
+    writeln('?    END OF THE COMPLETE SERIES OF TESTS     ?'),
+    writeln('??????????????????????????????????????????????'),
     format_execution_time(ElapsedTime),
     writeln('').
 
 %! safe_run(+Goal, +Name)
-%  Exécute un prédicat de test avec gestion d'erreurs et chronomètre
+%  Execute un predicat de test avec gestion d'erreurs et chronometre
 safe_run(Goal, Name) :-
     format('~n--- ~w ---~n', [Name]),
     get_time(Start),
@@ -790,35 +811,35 @@ safe_run(Goal, Name) :-
         (call(Goal) -> 
             (get_time(End), 
              Duration is End - Start,
-             format('✓ ~w : SUCCÈS (~2f secondes)~n', [Name, Duration])) 
+             format('? ~w : SUCCES (~2f secondes)~n', [Name, Duration])) 
         ; 
             (get_time(End), 
              Duration is End - Start,
-             format('✗ ~w : ÉCHEC (~2f secondes)~n', [Name, Duration]))
+             format('? ~w : ECHEC (~2f secondes)~n', [Name, Duration]))
         ),
         Error,
         (get_time(End), 
          Duration is End - Start,
-         format('✗ ~w : ERREUR - ~w (~2f secondes)~n', [Name, Error, Duration]))
+         format('? ~w : ERREUR - ~w (~2f secondes)~n', [Name, Error, Duration]))
     ).
 
 %! format_execution_time(+Seconds)
-%  Affiche le temps d'exécution dans un format lisible
+%  Affiche le temps d'execution dans un format lisible
 format_execution_time(Seconds) :-
     Seconds < 60,
     !,
-    format('Temps total d\'exécution : ~2f secondes~n', [Seconds]).
+    format('Temps total d\'execution : ~2f secondes~n', [Seconds]).
 format_execution_time(Seconds) :-
     Seconds < 3600,
     !,
     Minutes is floor(Seconds / 60),
     RemainingSeconds is Seconds - (Minutes * 60),
-    format('Temps total d\'exécution : ~d min ~2f sec~n', [Minutes, RemainingSeconds]).
+    format('Temps total d\'execution : ~d min ~2f sec~n', [Minutes, RemainingSeconds]).
 format_execution_time(Seconds) :-
     Hours is floor(Seconds / 3600),
     RemainingMinutes is floor((Seconds - (Hours * 3600)) / 60),
     RemainingSeconds is Seconds - (Hours * 3600) - (RemainingMinutes * 60),
-    format('Temps total d\'exécution : ~d h ~d min ~2f sec~n', [Hours, RemainingMinutes, RemainingSeconds]).
+    format('Temps total d\'execution : ~d h ~d min ~2f sec~n', [Hours, RemainingMinutes, RemainingSeconds]).
 % =========================================================================
 % END OF DRIVER
 % =========================================================================

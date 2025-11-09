@@ -9,7 +9,7 @@
 % AXIOMS
 %=========================================================================
 % =========================================================================
-% DEBUG RULE - À AJOUTER TEMPORAIREMENT
+% DEBUG RULE - A AJOUTER TEMPORAIREMENT
 % =========================================================================
 
 % O.0 Ax 
@@ -26,6 +26,13 @@ prove(G > D, _, _, J, J, _, ax(G>D, ax)) :-
 prove(G>D, _, _, J, J, LogicLevel, lbot(G>D, #)) :-
     member(LogicLevel, [intuitionistic, classical]),
     member(#, G), !.
+  % 7. IP (Indirect Proof - THE classical law). 
+prove(G>D, FV, I, J, K, classical, ip(G>D, P)) :-
+    D = [A],  % Any goal A (not just bottom)
+    A \= #,   % Not already bottom
+    \+ member((A => #), G),  % not-A not already in context
+    I > 0,
+    prove([(A => #)|G]>[#], FV, I, J, K, classical, P).
 % =========================================================================
 %  PROPOSITIONAL RULES
 % =========================================================================
@@ -86,24 +93,15 @@ prove(G > D, FV, I, J, K, LogicLevel, lall(G>D, P)) :-
     length(FV, Len), Len < I,  
     copy_term((X:A,FV), (Y:A1,FV)),
     prove([A1|G] > D, [Y|FV], I, J, K, LogicLevel, P), !.
+% 8. R-> 
+prove(G>D, FV, I, J, K, LogicLevel, rcond(G>D,P)) :-
+    D = [A=>B], !,
+    prove([A|G]>[B], FV, I, J, K, LogicLevel, P).
 % 6. L->-> 
 prove(G>D, FV, I, J, K, LogicLevel, ltoto(G>D,P1,P2)) :-
     select(((A=>B)=>C),G,G1), !,
     prove([A,(B=>C)|G1]>[B], FV, I, J, _J1, LogicLevel, P1),
     prove([C|G1]> D, FV, I, _K1, K, LogicLevel, P2).
-% 7. IP (Indirect Proof - THE classical law). 
-prove(G>D, FV, I, J, K, classical, ip(G>D, P)) :-
-    D = [A],  % Any goal A (not just bottom)
-    A \= #,   % Not already bottom
-    \+ member((A => #), G),  % not-A not already in context
-    I > 0,
-    prove([(A => #)|G]>[#], FV, I, J, K, classical, P).
-
-% 8. R-> 
-prove(G>D, FV, I, J, K, LogicLevel, rcond(G>D,P)) :-
-    D = [A=>B], !,
-    prove([A|G]>[B], FV, I, J, K, LogicLevel, P).
-
 % 9 LvExists  (Quantification Rule Exception: must be *before* Rv)
 prove(G>D, FV, I, J, K, LogicLevel, lex_lor(G>D, P1, P2)) :-
     select((?[_Z-X]:(A|B)), G, G1), !,
@@ -111,7 +109,7 @@ prove(G>D, FV, I, J, K, LogicLevel, lex_lor(G>D, P1, P2)) :-
     J1 is J+1,
     prove([A1|G1]>D, FV, I, J1, J2, LogicLevel, P1),
     prove([B1|G1]>D, FV, I, J2, K, LogicLevel, P2).
-% 10. R∨ 
+% 10. R? 
 prove(G>D, FV, I, J, K, LogicLevel, ror(G>D, P)) :-
     D = [(A|B)], !,
     (   prove(G>[A], FV, I, J, K, LogicLevel, P)
@@ -160,7 +158,7 @@ prove(G>D, FV, I, J, K, LogicLevel, cq_m(G>D,P)) :-
 % REFLEXIVITY: |- t = t
 prove(_G > D, _, _, J, J, _, eq_refl(D)) :-
     D = [T = T],
-    ground(T),  % ← Ajouter cette ligne
+    ground(T),  % <- Ajouter cette ligne
     !.
 % SYMMETRY: t = u |- u = t  
 prove(G > D, _, _, J, J, _, eq_sym(G>D)) :-

@@ -15,37 +15,37 @@ g4_to_fitch_sequent(Proof, OriginalSequent) :-
     
     ( premise_list(PremList), PremList \= [] ->
         render_premise_list(PremList, 0, 1, NextLine, InitialContext),
-        LastPremLine is NextLine - 1  % ✅ CORRECTION : dernière ligne de prémisse
+        LastPremLine is NextLine - 1  % ? CORRECTION : derniere ligne de premisse
     ;
         _NextLine = 1,
-        LastPremLine = 0,             % ✅ CORRECTION : pas de prémisses
+        LastPremLine = 0,             % ? CORRECTION : pas de premisses
         InitialContext = []
     ),
     
-    % ✅ CORRECTION : Scope=1 (indentation), CurLine=LastPremLine (numérotation)
+    % ? CORRECTION : Scope=1 (indentation), CurLine=LastPremLine (numerotation)
     fitch_g4_proof(Proof, InitialContext, 1, LastPremLine, LastLine, ResLine, 0, _),
     
-    % DÉTECTER : Est-ce qu'une règle a été appliquée ?
+    % DETECTER : Est-ce qu'une regle a ete appliquee ?
     ( LastLine = LastPremLine ->
-        % Aucune ligne ajoutée → axiome pur → afficher réitération
+        % Aucune ligne ajoutee -> axiome pur -> afficher reiteration
         write('\\fa '),
         rewrite(Conclusion, 0, _, LatexConclusion),
         write(LatexConclusion),
         format(' &  R ~w\\\\', [ResLine]), nl
     ;
-        % Une règle a déjà affiché la conclusion → ne rien faire
+        % Une regle a deja affiche la conclusion -> ne rien faire
         true
     ).
 
-% g4_to_fitch_theorem/1 : Pour théorèmes (comportement original)
+% g4_to_fitch_theorem/1 : Pour theoremes (comportement original)
 g4_to_fitch_theorem(Proof) :-
     retractall(fitch_line(_, _, _, _)),
     retractall(abbreviated_line(_)),
     fitch_g4_proof(Proof, [], 1, 0, _, _, 0, _).
 % =========================================================================
-% AFFICHAGE DES PRÉMISSES
+% AFFICHAGE DES PREMISSES
 % =========================================================================
-% render_premise_list/5: Affiche une liste de prémisses en Fitch
+% render_premise_list/5: Affiche une liste de premisses en Fitch
 render_premise_list([], _, Line, Line, []) :- !.
 
 render_premise_list([LastPremiss], Scope, CurLine, NextLine, [CurLine:LastPremiss]) :-
@@ -68,7 +68,7 @@ render_premise_list([Premiss|Rest], Scope, CurLine, NextLine, [CurLine:Premiss|R
     NextCurLine is CurLine + 1,
     render_premise_list(Rest, Scope, NextCurLine, NextLine, RestContext).
 % =========================================================================
-% ASSERTION SÉCURISÉE
+% ASSERTION SECURISEE
 % =========================================================================
 assert_safe_fitch_line(N, Formula, Just, Scope) :-
     catch(
@@ -160,7 +160,7 @@ fitch_g4_proof(ax((Premisses > [Goal])), Context, _Scope, CurLine, NextLine, Res
 % =========================================================================
 % PROPOSITIONAL RULES 
 % =========================================================================
-% L0→ 
+% L0-> 
 fitch_g4_proof(l0cond((Premisss > _), SubProof), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :-
     !,
     select((Ant => Cons), Premisss, Remaining),
@@ -173,7 +173,7 @@ fitch_g4_proof(l0cond((Premisss > _), SubProof), Context, Scope, CurLine, NextLi
     assert_safe_fitch_line(DerLine, Cons, l0cond(MajLine, MinLine), Scope),
     fitch_g4_proof(SubProof, [DerLine:Cons|Context], Scope, DerLine, NextLine, ResLine, V1, VarOut).
 
-% L∧→ 
+% L?-> 
 fitch_g4_proof(landto((Premisses > _), SubProof), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- !,
     extract_new_formula(Premisses, SubProof, NewFormula),
     select(((A & B) => C), Premisses, _),
@@ -181,7 +181,7 @@ fitch_g4_proof(landto((Premisses > _), SubProof), Context, Scope, CurLine, NextL
     derive_and_continue(Scope, NewFormula, 'L$ \\land \\to $ ~w', [ImpLine],
                        landto(ImpLine), SubProof, Context, CurLine, NextLine, ResLine, VarIn, VarOut).
 
-% L∨→ : Disjunction to implications
+% L?-> : Disjunction to implications
 fitch_g4_proof(lorto((Premisses > _), SubProof), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- !,
     SubProof =.. [_Rule|[(SubPremisses > _SubGoal)|_]],
     findall(F, (member(F, SubPremisses), \+ member(F, Premisses)), NewFormulas),
@@ -203,10 +203,10 @@ fitch_g4_proof(lorto((Premisses > _), SubProof), Context, Scope, CurLine, NextLi
         fitch_g4_proof(SubProof, Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut)
     ).
 
-% L∧ : Conjunction elimination
+% L? : Conjunction elimination
 fitch_g4_proof(land((Premisses > [Goal]), SubProof), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- !,
     select((A & B), Premisses, _),
-   % member(ConjLine:(A & B), Context), ligne corrigée par la suivante
+   % member(ConjLine:(A & B), Context), ligne corrigee par la suivante
     find_context_line((A & B), Context, ConjLine),
     ( is_direct_conjunct(Goal, (A & B)) ->
         derive_formula(Scope, Goal, '$ \\land E $ ~w', [ConjLine], land(ConjLine),
@@ -217,7 +217,7 @@ fitch_g4_proof(land((Premisses > [Goal]), SubProof), Context, Scope, CurLine, Ne
         fitch_g4_proof(SubProof, NewCtx, Scope, LastLine, NextLine, ResLine, V1, VarOut)
     ).
 
-% L⊥ : Explosion
+% L? : Explosion
 fitch_g4_proof(lbot((Premisss > [Goal]), _), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :-
     !,
     member(#, Premisss),
@@ -229,7 +229,7 @@ fitch_g4_proof(lbot((Premisss > [Goal]), _), Context, Scope, CurLine, NextLine, 
     NextLine = DerLine,
     ResLine = DerLine.
 
-% R∨ : Disjunction introduction
+% R? : Disjunction introduction
 fitch_g4_proof(ror((_ > [Goal]), SubProof), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :-
     !,
     ( Goal = (_ | _), try_derive_immediately(Goal, Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) ->
@@ -244,10 +244,10 @@ fitch_g4_proof(ror((_ > [Goal]), SubProof), Context, Scope, CurLine, NextLine, R
     ).
 
 % =========================================================================
-% RÈGLES AVEC HYPOTHÈSES (ASSUME-DISCHARGE)
+% REGLES AVEC HYPOTHESES (ASSUME-DISCHARGE)
 % =========================================================================
 
-% R→ : Implication introduction
+% R-> : Implication introduction
 fitch_g4_proof(rcond((_ > [A => B]), SubProof), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :-
     !,
     HypLine is CurLine + 1,
@@ -299,7 +299,7 @@ fitch_g4_proof(ip((_ > [Goal]), SubProof), Context, Scope, CurLine, NextLine, Re
     NextLine = IPLine,
     ResLine = IPLine.
 
-% L∨ : Disjunction elimination
+% L? : Disjunction elimination
 fitch_g4_proof(lor((Premisss > [Goal]), SP1, SP2), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :-
     !,
     ( try_derive_immediately(Goal, Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) ->
@@ -325,10 +325,10 @@ fitch_g4_proof(lor((Premisss > [Goal]), SP1, SP2), Context, Scope, CurLine, Next
     ).
 
 % =========================================================================
-% RÈGLES BINAIRES
+% REGLES BINAIRES
 % =========================================================================
 
-% R∧ : Conjunction introduction
+% R? : Conjunction introduction
 fitch_g4_proof(rand((_ > [Goal]), SP1, SP2), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- !,
     Goal = (L & _R),
     ( try_derive_immediately(Goal, Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) -> true
@@ -338,66 +338,66 @@ fitch_g4_proof(rand((_ > [Goal]), SP1, SP2), Context, Scope, CurLine, NextLine, 
                     End2, NextLine, ResLine, V2, VarOut)
     ).
 
-% L→→ : Special G4 rule
+% L->-> : Special G4 rule
 fitch_g4_proof(ltoto((Premisses > _), SP1, SP2), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- !,
     select(((Ant => Inter) => Cons), Premisses, _),
     find_context_line(((Ant => Inter) => Cons), Context, ComplexLine),
     
-    % ÉTAPE 1 : Dériver (Inter => Cons) par L→→
+    % ETAPE 1 : Deriver (Inter => Cons) par L->->
     ExtractLine is CurLine + 1,
     format(atom(ExtractJust), 'L$ \\to \\to $ ~w', [ComplexLine]),
     render_have(Scope, (Inter => Cons), ExtractJust, CurLine, ExtractLine, VarIn, V1),
     assert_safe_fitch_line(ExtractLine, (Inter => Cons), ltoto(ComplexLine), Scope),
     
-    % ÉTAPE 2 : Assumer Ant
+    % ETAPE 2 : Assumer Ant
     AssLine is ExtractLine + 1,
     assert_safe_fitch_line(AssLine, Ant, assumption, Scope),
     render_hypo(Scope, Ant, 'AS', ExtractLine, AssLine, V1, V2),
     NewScope is Scope + 1,
     
-    % ÉTAPE 3 : Prouver Inter avec [Ant, (Inter=>Cons) | Context]
+    % ETAPE 3 : Prouver Inter avec [Ant, (Inter=>Cons) | Context]
     fitch_g4_proof(SP1, [AssLine:Ant, ExtractLine:(Inter => Cons)|Context],
                   NewScope, AssLine, SubEnd, InterLine, V2, V3),
     
-    % ÉTAPE 4 : Dériver (Ant => Inter) par →I
+    % ETAPE 4 : Deriver (Ant => Inter) par ->I
     ImpLine is SubEnd + 1,
     assert_safe_fitch_line(ImpLine, (Ant => Inter), rcond(AssLine, InterLine), Scope),
     format(atom(Just1), '$ \\to I $ ~w-~w', [AssLine, InterLine]),
     render_have(Scope, (Ant => Inter), Just1, SubEnd, ImpLine, V3, V4),
     
-    % ÉTAPE 5 : Dériver Cons par →E
+    % ETAPE 5 : Deriver Cons par ->E
     MPLine is ImpLine + 1,
     assert_safe_fitch_line(MPLine, Cons, l0cond(ComplexLine, ImpLine), Scope),
     format(atom(Just2), '$ \\to E $ ~w,~w', [ComplexLine, ImpLine]),
     render_have(Scope, Cons, Just2, ImpLine, MPLine, V4, V5),
     
-    % ÉTAPE 6 : Continuer avec SP2
+    % ETAPE 6 : Continuer avec SP2
     fitch_g4_proof(SP2, [MPLine:Cons, ImpLine:(Ant => Inter), ExtractLine:(Inter => Cons)|Context],
                   Scope, MPLine, NextLine, ResLine, V5, VarOut).
 % =========================================================================
-% RÈGLES DE QUANTIFICATION
+% REGLES DE QUANTIFICATION
 % =========================================================================
-% R∀
+% R?
 fitch_g4_proof(rall((_ > [(![Z-X]:A)]), SubProof), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- !,
     fitch_g4_proof(SubProof, Context, Scope, CurLine, SubEnd, BodyLine, VarIn, V1),
     derive_formula(Scope, (![Z-X]:A), '$ \\forall I $ ~w', [BodyLine], rall(BodyLine),
                   SubEnd, NextLine, ResLine, V1, VarOut).
-% L∀ : Élimination Universelle
+% L? : Elimination Universelle
 fitch_g4_proof(lall((Premisses > _), SubProof), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- !,
     extract_new_formula(Premisses > _, SubProof, NewFormula),
     
-    % Trouver le quantificateur universel qui génère NewFormula
+    % Trouver le quantificateur universel qui genere NewFormula
     (
         % Cas 1: NewFormula est une instance directe d'un universel dans Premisses
         (
             member((![Z-X]:Body), Premisses),
-            % Vérifier si Body (avec substitution) donne NewFormula
+            % Verifier si Body (avec substitution) donne NewFormula
             strip_annotations_deep(Body, StrippedBody),
             strip_annotations_deep(NewFormula, StrippedNew),
             unifiable(StrippedBody, StrippedNew, _),
             UniversalFormula = (![Z-X]:Body)
         ;
-            % Cas 2: Chercher par structure équivalente
+            % Cas 2: Chercher par structure equivalente
             member((![Z-X]:Body), Premisses),
             formulas_equivalent(Body, NewFormula),
             UniversalFormula = (![Z-X]:Body)
@@ -412,13 +412,13 @@ fitch_g4_proof(lall((Premisses > _), SubProof), Context, Scope, CurLine, NextLin
     derive_and_continue(Scope, NewFormula, '$ \\forall E $ ~w', [UnivLine], lall(UnivLine),
                        SubProof, Context, CurLine, NextLine, ResLine, VarIn, VarOut).
 
-% R∃
+% R?
 fitch_g4_proof(rex((_ > [Goal]), SubProof), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- !,
     fitch_g4_proof(SubProof, Context, Scope, CurLine, SubEnd, _WitnessLine, VarIn, V1),
-    % ✅ CORRECTION : Référencer SubEnd (la ligne du témoin), pas WitnessLine
+    % ? CORRECTION : Referencer SubEnd (la ligne du temoin), pas WitnessLine
     derive_formula(Scope, Goal, '$ \\exists I $ ~w', [SubEnd], rex(SubEnd),
                   SubEnd, NextLine, ResLine, V1, VarOut).
-% L∃
+% L?
 fitch_g4_proof(lex((Premisses > [Goal]), SubProof), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- !,
     select((?[Z-X]:Body), Premisses, _),
     find_context_line(?[Z-X]:Body, Context, ExistLine),
@@ -432,12 +432,12 @@ fitch_g4_proof(lex((Premisses > [Goal]), SubProof), Context, Scope, CurLine, Nex
       fitch_g4_proof(SubProof, [WitLine:Witness|Context], NewScope, WitLine, SubEnd, _GoalLine, V1, V2),
       ElimLine is SubEnd + 1,
       assert_safe_fitch_line(ElimLine, Goal, lex(ExistLine, WitLine, SubEnd), Scope),
-      % ✅ CORRECTION : Référencer SubEnd (dernière ligne de la sous-preuve)
+      % ? CORRECTION : Referencer SubEnd (derniere ligne de la sous-preuve)
       format(atom(Just), '$ \\exists E $ ~w,~w-~w', [ExistLine, WitLine, SubEnd]),
       render_have(Scope, Goal, Just, SubEnd, ElimLine, V2, VarOut),
       NextLine = ElimLine, ResLine = ElimLine
     ).
-% L∃∨ : Combined existential-disjunction 
+% L?? : Combined existential-disjunction 
 fitch_g4_proof(lex_lor((_ > [Goal]), SP1, SP2), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- !,
     SP1 =.. [_, (Prem1 > _)|_],
     SP2 =.. [_, (Prem2 > _)|_],
@@ -465,7 +465,7 @@ fitch_g4_proof(lex_lor((_ > [Goal]), SP1, SP2), Context, Scope, CurLine, NextLin
 fitch_g4_proof(cq_c((Premisses > _), SubProof), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- !,
     extract_new_formula(Premisses, SubProof, NewFormula),
     select((![Z-X]:A) => B, Premisses, _),
-    find_context_line((![Z-X]:A) => B, Context, Line),  % ← CORRECTION
+    find_context_line((![Z-X]:A) => B, Context, Line),  % <- CORRECTION
     derive_and_continue(Scope, NewFormula, '$ CQ_{c} $ ~w', [Line], cq_c(Line),
                        SubProof, Context, CurLine, NextLine, ResLine, VarIn, VarOut).
 
@@ -473,18 +473,18 @@ fitch_g4_proof(cq_c((Premisses > _), SubProof), Context, Scope, CurLine, NextLin
 fitch_g4_proof(cq_m((Premisses > _), SubProof), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- !,
     extract_new_formula(Premisses, SubProof, NewFormula),
     select((?[Z-X]:A)=>B, Premisses, _),
-    find_context_line((?[Z-X]:A)=>B, Context, Line),  % ← CORRECTION : cherche la bonne ligne
+    find_context_line((?[Z-X]:A)=>B, Context, Line),  % <- CORRECTION : cherche la bonne ligne
     derive_and_continue(Scope, NewFormula, '$ CQ_{m} $ ~w', [Line], cq_m(Line),
                        SubProof, Context, CurLine, NextLine, ResLine, VarIn, VarOut).
 
 % =========================================================================
-% RÈGLES D'ÉGALITÉ (EQUALITY RULES)
+% REGLES D'EGALITE (EQUALITY RULES)
 % =========================================================================
 % =========================================================================
-% RÈGLES D'ÉGALITÉ (EQUALITY RULES) - VERSION CORRIGÉE
+% REGLES D'EGALITE (EQUALITY RULES) - VERSION CORRIGEE
 % =========================================================================
 
-% Réflexivité
+% Reflexivite
 fitch_g4_proof(eq_refl(D), _Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- 
     !,
     D = [Goal],
@@ -494,7 +494,7 @@ fitch_g4_proof(eq_refl(D), _Context, Scope, CurLine, NextLine, ResLine, VarIn, V
     NextLine = DerLine,
     ResLine = DerLine.
 
-% Symétrie
+% Symetrie
 fitch_g4_proof(eq_sym(_G>D), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- 
     !,
     D = [A = B],
@@ -506,7 +506,7 @@ fitch_g4_proof(eq_sym(_G>D), Context, Scope, CurLine, NextLine, ResLine, VarIn, 
     NextLine = DerLine,
     ResLine = DerLine.
 
-% Transitivité
+% Transitivite
 fitch_g4_proof(eq_trans(G>D), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- 
     !,
     D = [A = C],
@@ -524,23 +524,23 @@ fitch_g4_proof(eq_trans(G>D), Context, Scope, CurLine, NextLine, ResLine, VarIn,
 fitch_g4_proof(eq_subst(G>D), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- 
     !,
     D = [Goal],
-    Goal \= (_ = _),  % Pas une égalité
+    Goal \= (_ = _),  % Pas une egalite
     
-    % Extraire l'égalité et le prédicat de G
+    % Extraire l'egalite et le predicat de G
     member(A = B, G),
     member(Pred, G),
     Pred \= (_ = _),
     Pred \= (A = B),
     
-    % Vérifier que Goal est Pred avec A remplacé par B
+    % Verifier que Goal est Pred avec A remplace par B
     Pred =.. [PredName|Args],
     Goal =.. [PredName|GoalArgs],
     
-    % Trouver la position où la substitution a lieu
+    % Trouver la position ou la substitution a lieu
     nth0(Pos, Args, A),
     nth0(Pos, GoalArgs, B),
     
-    % Trouver les numéros de ligne dans le contexte
+    % Trouver les numeros de ligne dans le contexte
     find_context_line(A = B, Context, EqLine),
     find_context_line(Pred, Context, PredLine),
     
@@ -567,7 +567,7 @@ fitch_g4_proof(eq_cong(_G>D), Context, Scope, CurLine, NextLine, ResLine, VarIn,
     NextLine = DerLine,
     ResLine = DerLine.
 
-% Substitution dans égalité
+% Substitution dans egalite
 fitch_g4_proof(eq_subst_eq(G>D), Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- 
     !,
     D = [Goal_LHS = Goal_RHS],
@@ -582,7 +582,7 @@ fitch_g4_proof(eq_subst_eq(G>D), Context, Scope, CurLine, NextLine, ResLine, Var
     NextLine = DerLine,
     ResLine = DerLine.
 
-% Transitivité en chaîne
+% Transitivite en chaine
 fitch_g4_proof(eq_trans_chain(_G>D), _Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut) :- 
     !,
     D = [A = C],
@@ -654,24 +654,24 @@ extract_new_formula(CurrentPremisses, SubProof, _) :-
 % FIND_CONTEXT_LINE : Matcher formules dans le contexte
 % =========================================================================
 % =========================================================================
-% PRIORITÉ ABSOLUE : PRÉMISSES (lignes 1-N où N = nombre de prémisses)
+% PRIORITE ABSOLUE : PREMISSES (lignes 1-N ou N = nombre de premisses)
 % =========================================================================
 
 find_context_line(Formula, Context, LineNumber) :-
     premise_list(PremList),
     length(PremList, NumPremises),
-    % Chercher UNIQUEMENT dans les N premières lignes
+    % Chercher UNIQUEMENT dans les N premieres lignes
     member(LineNumber:ContextFormula, Context),
     LineNumber =< NumPremises,
-    % Matcher avec les différentes variantes possibles
+    % Matcher avec les differentes variantes possibles
     ( ContextFormula = Formula
     ; strip_annotations_match(Formula, ContextFormula)
     ; formulas_equivalent(Formula, ContextFormula)
     ),
-    !.  % Couper dès qu'on trouve dans les prémisses
+    !.  % Couper des qu'on trouve dans les premisses
 
 % =========================================================================
-% PRIORITÉ -1 : NÉGATION DE QUANTIFICATEUR (forme originale ~)
+% PRIORITE -1 : NEGATION DE QUANTIFICATEUR (forme originale ~)
 % =========================================================================
 
 % Cherche (![x-x]:Body) => # mais contexte a ~![x]:Body (forme originale)
@@ -681,15 +681,15 @@ find_context_line((![_Z-_X]:Body) => #, Context, LineNumber) :-
         % Forme originale avec ~
         ContextFormula = (~ ![_]:Body)
     ;
-        % Forme transformée
+        % Forme transformee
         ContextFormula = ((![_]:Body) => #)
     ;
-        % Forme transformée avec annotation
+        % Forme transformee avec annotation
         ContextFormula = ((![_-_]:Body) => #)
     ),
     !.
 
-% Même chose pour l'existentiel
+% Meme chose pour l'existentiel
 find_context_line((?[_Z-_X]:Body) => #, Context, LineNumber) :-
     member(LineNumber:ContextFormula, Context),
     (
@@ -701,9 +701,9 @@ find_context_line((?[_Z-_X]:Body) => #, Context, LineNumber) :-
     ),
     !.
 % =========================================================================
-% PRIORITÉ 0 : QUANTIFICATEURS - MATCHER STRUCTURE INTERNE COMPLEXE
+% PRIORITE 0 : QUANTIFICATEURS - MATCHER STRUCTURE INTERNE COMPLEXE
 % =========================================================================
-% Universel : matcher structure interne indépendamment de la transformation
+% Universel : matcher structure interne independamment de la transformation
 find_context_line(![Z-_]:SearchBody, Context, LineNumber) :-
     member(LineNumber:ContextFormula, Context),
     (
@@ -729,9 +729,9 @@ find_context_line(?[Z-_]:SearchBody, Context, LineNumber) :-
     ),
     !.
 
-% ─────────────────────────────────────────────────────────────────────────
-% PRIORITÉ 1 : NÉGATIONS (notation originale ~ vs transformée => #)
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
+% PRIORITE 1 : NEGATIONS (notation originale ~ vs transformee => #)
+% -------------------------------------------------------------------------
 
 % Cas 1: Cherche ?[x]:A => # mais contexte a ~ ?[x]:A
 find_context_line((?[Z-_]:A) => #, Context, LineNumber) :-
@@ -747,9 +747,9 @@ find_context_line(A => #, Context, LineNumber) :-
     A \= (![_]:_),
     member(LineNumber:(~A), Context), !.
 
-% ─────────────────────────────────────────────────────────────────────────
-% PRIORITÉ 2 : QUANTIFICATEURS (avec/sans annotations de variables)
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
+% PRIORITE 2 : QUANTIFICATEURS (avec/sans annotations de variables)
+% -------------------------------------------------------------------------
 
 % Universel : cherche ![x-x]:Body mais contexte a ![x]:Body
 find_context_line(![Z-_]:Body, Context, LineNumber) :-
@@ -757,7 +757,7 @@ find_context_line(![Z-_]:Body, Context, LineNumber) :-
     (
         ContextFormula = (![Z]:Body)      % Sans annotation
     ;
-        ContextFormula = (![Z-_]:Body)    % Avec annotation différente
+        ContextFormula = (![Z-_]:Body)    % Avec annotation differente
     ),
     !.
 
@@ -767,13 +767,13 @@ find_context_line(?[Z-_]:Body, Context, LineNumber) :-
     (
         ContextFormula = (?[Z]:Body)      % Sans annotation
     ;
-        ContextFormula = (?[Z-_]:Body)    % Avec annotation différente
+        ContextFormula = (?[Z-_]:Body)    % Avec annotation differente
     ),
     !.
 
-% ─────────────────────────────────────────────────────────────────────────
-% PRIORITÉ 3 : BICONDITIONNELLES (décomposées)
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
+% PRIORITE 3 : BICONDITIONNELLES (decomposees)
+% -------------------------------------------------------------------------
 
 find_context_line((A => B) & (B => A), Context, LineNumber) :-
     member(LineNumber:(A <=> B), Context), !.
@@ -781,38 +781,38 @@ find_context_line((A => B) & (B => A), Context, LineNumber) :-
 find_context_line((B => A) & (A => B), Context, LineNumber) :-
     member(LineNumber:(A <=> B), Context), !.
 
-% ─────────────────────────────────────────────────────────────────────────
-% PRIORITÉ 4 : MATCH EXACT
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
+% PRIORITE 4 : MATCH EXACT
+% -------------------------------------------------------------------------
 
 find_context_line(Formula, Context, LineNumber) :-
     member(LineNumber:Formula, Context), !.
 
-% ─────────────────────────────────────────────────────────────────────────
-% PRIORITÉ 5 : UNIFICATION
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
+% PRIORITE 5 : UNIFICATION
+% -------------------------------------------------------------------------
 
 find_context_line(Formula, Context, LineNumber) :-
     member(LineNumber:ContextFormula, Context),
     unify_with_occurs_check(Formula, ContextFormula), !.
 
-% ─────────────────────────────────────────────────────────────────────────
-% PRIORITÉ 6 : STRUCTURE MATCHING
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
+% PRIORITE 6 : STRUCTURE MATCHING
+% -------------------------------------------------------------------------
 
 find_context_line(Formula, Context, LineNumber) :-
     member(LineNumber:ContextFormula, Context),
     match_formula_structure(Formula, ContextFormula), !.
 
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
 % FALLBACK : WARNING si aucune correspondance
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
 
 find_context_line(Formula, _Context, 0) :-
     format('% WARNING: Formula ~w not found in context~n', [Formula]).
 
 % =========================================================================
-% HELPER : Équivalence de formules (comparaison structurelle pure)
+% HELPER : Equivalence de formules (comparaison structurelle pure)
 % =========================================================================
 
 % Helper : matcher en enlevant les annotations
@@ -852,7 +852,7 @@ formulas_equivalent((A <=> B), (C <=> D)) :-
         (formulas_equivalent(A, D), formulas_equivalent(B, C))
     ).
 
-% Négation transformée
+% Negation transformee
 formulas_equivalent(A => #, ~ B) :- !, formulas_equivalent(A, B).
 formulas_equivalent(~ A, B => #) :- !, formulas_equivalent(A, B).
 
@@ -886,26 +886,26 @@ formulas_equivalent(A => B, C => D) :-
 % Faux
 formulas_equivalent(#, #) :- !.
 
-% Prédicats/Termes : comparer structure (ignorer variables)
+% Predicats/Termes : comparer structure (ignorer variables)
 formulas_equivalent(Term1, Term2) :-
     compound(Term1),
     compound(Term2),
     !,
     Term1 =.. [Functor|_Args1],
     Term2 =.. [Functor|_Args2],
-    % Même foncteur suffit (on ignore les arguments qui sont des variables)
+    % Meme foncteur suffit (on ignore les arguments qui sont des variables)
     !.
 
-% Identité stricte
+% Identite stricte
 formulas_equivalent(A, B) :- A == B, !.
 
-% Fallback : termes atomiques avec même nom
+% Fallback : termes atomiques avec meme nom
 formulas_equivalent(A, B) :- 
     atomic(A), atomic(B),
     !.
 
 % Helper : matcher deux formules par structure (module renommage de variables)
-% Négations
+% Negations
 match_formula_structure(A => #, B => #) :- 
     !, match_formula_structure(A, B).
 match_formula_structure(~A, B => #) :- 
@@ -934,7 +934,7 @@ match_formula_structure(A <=> B, C <=> D) :-
 % Faux
 match_formula_structure(#, #) :- !.
 
-% Égalité stricte
+% Egalite stricte
 match_formula_structure(A, B) :-
     A == B, !.
 
@@ -977,7 +977,7 @@ extract_conjuncts((A & B), CLine, Scope, CurLine, [L1:A, L2:B], L2, VarIn, VarOu
     render_have(Scope, A, Just1, CurLine, L1, VarIn, V1),
     render_have(Scope, B, Just2, L1, L2, V1, VarOut).
 % =========================================================================
-% LOGIQUE DE DÉRIVATION IMMÉDIATE
+% LOGIQUE DE DERIVATION IMMEDIATE
 % =========================================================================
 derive_immediate(Scope, Formula, RuleTerm, JustFormat, JustArgs, CurLine, NextLine, ResLine, VarIn, VarOut) :-
     DerLine is CurLine + 1,
@@ -1039,7 +1039,7 @@ try_derive_immediately(Goal, Context, Scope, CurLine, NextLine, ResLine, VarIn, 
     derive_immediate(Scope, Goal, RuleTerm, JustFormat, JustArgs, CurLine, NextLine, ResLine, VarIn, VarOut).
 
 % =========================================================================
-% CONSTRUCTION DE LA MAP DES HYPOTHÈSES PARTAGÉES
+% CONSTRUCTION DE LA MAP DES HYPOTHESES PARTAGEES
 % =========================================================================
 
 build_hypothesis_map([], Map, Map).

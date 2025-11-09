@@ -8,15 +8,15 @@
 % =================================================================
 
 test_seq_forall_elim :-
-    write('∀E: ∀x P(x) ⊢ P(a)'), nl,
+    write('?E: ?x P(x) ? P(a)'), nl,
     prove([![x]:p(x)] > [p(a)]).
 
 test_seq_exists_intro :-
-    write('∃I: P(a) ⊢ ∃x P(x)'), nl,
+    write('?I: P(a) ? ?x P(x)'), nl,
     prove([p(a)] > [?[x]:p(x)]).
 
 test_seq_exists_elim :-
-    write('∃E: ∃x P(x), ∀x(P(x) → Q) ⊢ Q'), nl,
+    write('?E: ?x P(x), ?x(P(x) -> Q) ? Q'), nl,
     prove([?[x]:p(x), ![x]:(p(x) => q)] > [q]).
 
 % =================================================================
@@ -24,15 +24,15 @@ test_seq_exists_elim :-
 % =================================================================
 
 test_seq_forall_distribution :-
-    write('∀x(P(x) → Q(x)), ∀x P(x) ⊢ ∀x Q(x)'), nl,
+    write('?x(P(x) -> Q(x)), ?x P(x) ? ?x Q(x)'), nl,
     prove([![x]:(p(x) => q(x)), ![x]:p(x)] > [![x]:q(x)]).
 
 test_seq_exists_distribution :-
-    write('∃x(P(x) ∧ Q(x)) ⊢ ∃x P(x) ∧ ∃x Q(x)'), nl,
+    write('?x(P(x) ? Q(x)) ? ?x P(x) ? ?x Q(x)'), nl,
     prove([?[x]:(p(x) & q(x))] > [?[x]:p(x) & ?[x]:q(x)]).
 
 test_seq_mixed_quantifiers :-
-    write('∃y ∀x P(x,y) ⊢ ∀x ∃y P(x,y)'), nl,
+    write('?y ?x P(x,y) ? ?x ?y P(x,y)'), nl,
     prove([?[y]:(![x]:p(x,y))] > [![x]:(?[y]:p(x,y))]).
 
 % =================================================================
@@ -40,11 +40,11 @@ test_seq_mixed_quantifiers :-
 % =================================================================
 
 test_seq_neg_forall :-
-    write('¬∀x P(x) ⊢ ∃x ¬P(x) [classical]'), nl,
+    write('!?x P(x) ? ?x !P(x) [classical]'), nl,
     prove([~ (![x]:p(x))] <> [?[x]: ~ p(x)]).
 
 test_seq_neg_exists :-
-    write('¬∃x P(x) ⊢ ∀x ¬P(x)'), nl,
+    write('!?x P(x) ? ?x !P(x)'), nl,
     prove([~ (?[x]:p(x))] <> [![x]: ~ p(x)]).
 
 % =================================================================
@@ -52,11 +52,11 @@ test_seq_neg_exists :-
 % =================================================================
 
 test_seq_forall_mp :-
-    write('∀x(P(x) → Q(x)), P(a) ⊢ Q(a)'), nl,
+    write('?x(P(x) -> Q(x)), P(a) ? Q(a)'), nl,
     prove([![x]:(p(x) => q(x)), p(a)] > [q(a)]).
 
 test_seq_exists_mp :-
-    write('∃x P(x), ∀x(P(x) → Q(x)) ⊢ ∃x Q(x)'), nl,
+    write('?x P(x), ?x(P(x) -> Q(x)) ? ?x Q(x)'), nl,
     prove([?[x]:p(x), ![x]:(p(x) => q(x))] > [?[x]:q(x)]).
 
 % =================================================================
@@ -64,11 +64,11 @@ test_seq_exists_mp :-
 % =================================================================
 
 test_seq_barber_paradox :-
-    write('∀x(B(x,x) ↔ ¬B(x,x)) ⊢ ⊥ [Barber paradox]'), nl,
+    write('?x(B(x,x) <-> !B(x,x)) ? ? [Barber paradox]'), nl,
     prove([![x]:(b(x,x) <=> ~ b(x,x))] > [#]).
 
 test_seq_drinker :-
-    write('⊢ ∃x(D(x) → ∀y D(y)) [Drinker paradox - classical]'), nl,
+    write('? ?x(D(x) -> ?y D(y)) [Drinker paradox - classical]'), nl,
     prove([~ #] > [?[x]:(d(x) => ![y]:d(y))]).
 
 % =================================================================
@@ -76,15 +76,15 @@ test_seq_drinker :-
 % =================================================================
 
 test_seq_barbara :-
-    write('Barbara: ∀x(M(x) → P(x)), ∀x(S(x) → M(x)) ⊢ ∀x(S(x) → P(x))'), nl,
+    write('Barbara: ?x(M(x) -> P(x)), ?x(S(x) -> M(x)) ? ?x(S(x) -> P(x))'), nl,
     prove([![x]:(m(x) => p(x)), ![x]:(s(x) => m(x))] > [![x]:(s(x) => p(x))]).
 
 test_seq_darii :-
-    write('Darii: ∀x(M(x) → P(x)), ∃x(S(x) ∧ M(x)) ⊢ ∃x(S(x) ∧ P(x))'), nl,
+    write('Darii: ?x(M(x) -> P(x)), ?x(S(x) ? M(x)) ? ?x(S(x) ? P(x))'), nl,
     prove([![x]:(m(x) => p(x)), ?[x]:(s(x) & m(x))] > [?[x]:(s(x) & p(x))]).
 
 test_seq_socrates :-
-    write('Socrates: ∀x(H(x) → M(x)), H(socrates) ⊢ M(socrates)'), nl,
+    write('Socrates: ?x(H(x) -> M(x)), H(socrates) ? M(socrates)'), nl,
     prove([![x]:(h(x) => m(x)), h(socrates)] > [m(socrates)]).
 
 % =================================================================
@@ -92,23 +92,23 @@ test_seq_socrates :-
 % =================================================================
 
 test_seq_eq_reflexive :-
-    write('Reflexivity: ⊢ a = a'), nl,
+    write('Reflexivity: ? a = a'), nl,
     prove([~ #] > [a = a]).
 
 test_seq_eq_symmetric :-
-    write('Symmetry: a = b ⊢ b = a'), nl,
+    write('Symmetry: a = b ? b = a'), nl,
     prove([a = b] > [b = a]).
 
 test_seq_eq_transitive :-
-    write('Transitivity: a = b, b = c ⊢ a = c'), nl,
+    write('Transitivity: a = b, b = c ? a = c'), nl,
     prove([a = b, b = c] > [a = c]).
 
 test_seq_eq_substitution :-
-    write('Substitution: a = b, P(a) ⊢ P(b)'), nl,
+    write('Substitution: a = b, P(a) ? P(b)'), nl,
     prove([a = b, p(a)] > [p(b)]).
 
 test_seq_eq_congruence :-
-    write('Congruence: a = b ⊢ f(a) = f(b)'), nl,
+    write('Congruence: a = b ? f(a) = f(b)'), nl,
     prove([a = b] > [f(a) = f(b)]).
 
 % =================================================================
@@ -135,15 +135,15 @@ test_seq_lepage :-
 % =================================================================
 
 test_seq_bicond_left :-
-    write('A ↔ B, A ⊢ B'), nl,
+    write('A <-> B, A ? B'), nl,
     prove([a <=> b, a] > [b]).
 
 test_seq_bicond_right :-
-    write('A → B, B → A ⊢ A ↔ B'), nl,
+    write('A -> B, B -> A ? A <-> B'), nl,
     prove([a => b, b => a] > [a <=> b]).
 
 test_seq_bicond_quantifier :-
-    write('∀x(P(x) ↔ Q(x)), P(a) ⊢ Q(a)'), nl,
+    write('?x(P(x) <-> Q(x)), P(a) ? Q(a)'), nl,
     prove([![x]:(p(x) <=> q(x)), p(a)] > [q(a)]).
 
 % =================================================================
@@ -151,7 +151,7 @@ test_seq_bicond_quantifier :-
 % =================================================================
 
 run_fol_seq :-
-        retractall(fitch_line(_, _, _, _)),      % ← Nettoyage global
+        retractall(fitch_line(_, _, _, _)),      % <- Nettoyage global
     retractall(abbreviated_line(_)),
     write('========================================'), nl,
     write('FOL SEQUENT TEST SUITE START'), nl,

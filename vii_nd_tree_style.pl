@@ -28,8 +28,8 @@ render_nd_tree_proof(Proof) :-
         (
             ( premise_list(PremissList), PremissList = [_|_] ->
                 render_premise_list_silent(PremissList, 0, 1, NextLine, InitialContext),
-                LastPremLine is NextLine - 1,  % ✅ CORRECTION
-                % ✅ CORRECTION : Scope=1, CurLine=LastPremLine
+                LastPremLine is NextLine - 1,  % ? CORRECTION
+                % ? CORRECTION : Scope=1, CurLine=LastPremLine
                 with_output_to(atom(_), fitch_g4_proof(Proof, InitialContext, 1, LastPremLine, _, _, 0, _))
             ;
                 with_output_to(atom(_), fitch_g4_proof(Proof, [], 1, 0, _, _, 0, _))
@@ -58,21 +58,21 @@ collect_and_render_tree() :-
         findall(N, member(N-_-_-_, SortedLines), Ns),
         max_list(Ns, LastLineNum),
         
-        % Détecter les prémisses
+        % Detecter les premisses
         findall(N-F, member(N-F-premise-_, SortedLines), Premises),
         
         ( build_buss_tree(LastLineNum, SortedLines, Tree) ->
             write('\\begin{prooftree}'), nl,
-            % Si prémisses détectées, vérifier si weakening nécessaire
+            % Si premisses detectees, verifier si weakening necessaire
             ( Premises \= [] ->
                 ( needs_weakening(Tree, Premises) ->
                     render_tree_with_weakening(Premises, SortedLines)
                 ;
-                    % Pas de weakening : simple réitération
+                    % Pas de weakening : simple reiteration
                     render_tree_simple_sequent(Premises, SortedLines)
                 )
             ;
-                % Pas de prémisses : rendu normal
+                % Pas de premisses : rendu normal
                 render_buss_tree(Tree, SortedLines, HypMap)
             ),
             write('\\end{prooftree}'), nl
@@ -88,7 +88,7 @@ compare_lines(Delta, N1-_-_-_, N2-_-_-_) :-
 % GESTION DU WEAKENING POUR TREE STYLE
 % =========================================================================
 
-% Pas de weakening pour les règles d'égalité
+% Pas de weakening pour les regles d'egalite
 needs_weakening(Tree, _Premises) :-
     is_equality_tree(Tree),
     !,
@@ -98,7 +98,7 @@ needs_weakening(Tree, Premises) :-
     findall(PremFormula, member(_-PremFormula, Premises), PremFormulas),
     \+ all_premises_used(Tree, PremFormulas).
 
-% Helper : détecter un arbre d'égalité
+% Helper : detecter un arbre d'egalite
 is_equality_tree(binary_node(eq_subst, _, _, _)) :- !.
 is_equality_tree(binary_node(eq_trans, _, _, _)) :- !.
 is_equality_tree(binary_node(eq_subst_eq, _, _, _)) :- !.
@@ -156,7 +156,7 @@ tree_contains_formula(discharged_node(_, _, _, SubTree), F) :-
 tree_contains_formula(discharged_node(_, _, _, TreeA, TreeB), F) :-
     (tree_contains_formula(TreeA, F) ; tree_contains_formula(TreeB, F)).
 
-% Rendu simple : toutes prémisses utilisées
+% Rendu simple : toutes premisses utilisees
 render_tree_simple_sequent(_Premises, FitchLines) :-
     % TOUJOURS construire l'arbre complet via render_buss_tree
     findall(N, member(N-_-_-_, FitchLines), Ns),
@@ -167,7 +167,7 @@ render_tree_simple_sequent(_Premises, FitchLines) :-
 
 % Rendu avec Weakening
 render_tree_with_weakening(Premises, _FitchLines) :-
-    % Afficher toutes les prémisses
+    % Afficher toutes les premisses
     forall(member(_-PremFormula, Premises), (
         write('\\AxiomC{}'), nl,
         write('\\noLine'), nl,
@@ -176,7 +176,7 @@ render_tree_with_weakening(Premises, _FitchLines) :-
         write('$}'), nl
     )),
     
-    % Extraire la conclusion depuis le séquent stocké
+    % Extraire la conclusion depuis le sequent stocke
     current_proof_sequent((_ > [Conclusion])),
     
     length(Premises, NumPremises),
@@ -215,36 +215,36 @@ build_tree_from_just(reiteration(SourceLine), _LineNum, Formula, FitchLines, rei
     !,
     build_buss_tree(SourceLine, FitchLines, SubTree).
 
-% R→
+% R->
 build_tree_from_just(rcond(HypNum, GoalNum), _LineNum, Formula, FitchLines, discharged_node(rcond, HypNum, Formula, SubTree)) :-
     !, build_buss_tree(GoalNum, FitchLines, SubTree).
 
-% L0→
+% L0->
 build_tree_from_just(l0cond(MajLine, MinLine), _LineNum, Formula, FitchLines, binary_node(l0cond, Formula, TreeA, TreeB)) :-
     !, build_buss_tree(MajLine, FitchLines, TreeA), build_buss_tree(MinLine, FitchLines, TreeB).
 
-% R∨
+% R?
 build_tree_from_just(ror(SubLine), _LineNum, Formula, FitchLines, unary_node(ror, Formula, SubTree)) :-
     !, build_buss_tree(SubLine, FitchLines, SubTree).
 
-% L∨
+% L?
 build_tree_from_just(lor(DisjLine, HypA, HypB, GoalA, GoalB), _LineNum, Formula, FitchLines,
                      ternary_node(lor, HypA, HypB, Formula, DisjTree, TreeA, TreeB)) :-
     !, build_buss_tree(DisjLine, FitchLines, DisjTree),
     build_buss_tree(GoalA, FitchLines, TreeA),
     build_buss_tree(GoalB, FitchLines, TreeB).
 
-% L⊥
+% L?
 build_tree_from_just(lbot(BotLine), _LineNum, Formula, FitchLines, unary_node(lbot, Formula, SubTree)) :-
     !, build_buss_tree(BotLine, FitchLines, SubTree).
 
-% L∧
+% L?
 build_tree_from_just(land(ConjLine, _Which), _LineNum, Formula, FitchLines, unary_node(land, Formula, SubTree)) :-
     !, build_buss_tree(ConjLine, FitchLines, SubTree).
 build_tree_from_just(land(ConjLine), _LineNum, Formula, FitchLines, unary_node(land, Formula, SubTree)) :-
     !, build_buss_tree(ConjLine, FitchLines, SubTree).
 
-% R∧
+% R?
 build_tree_from_just(rand(LineA, LineB), _LineNum, Formula, FitchLines, binary_node(rand, Formula, TreeA, TreeB)) :-
     !, build_buss_tree(LineA, FitchLines, TreeA), build_buss_tree(LineB, FitchLines, TreeB).
 
@@ -252,33 +252,33 @@ build_tree_from_just(rand(LineA, LineB), _LineNum, Formula, FitchLines, binary_n
 build_tree_from_just(ip(HypNum, BotNum), _LineNum, Formula, FitchLines, discharged_node(ip, HypNum, Formula, SubTree)) :-
     !, build_buss_tree(BotNum, FitchLines, SubTree).
 
-% L∃
+% L?
 build_tree_from_just(lex(ExistLine, WitNum, GoalNum), _LineNum, Formula, FitchLines, 
                      discharged_node(lex, WitNum, Formula, ExistTree, GoalTree)) :-
     !,
     build_buss_tree(ExistLine, FitchLines, ExistTree), build_buss_tree(GoalNum, FitchLines, GoalTree).
 
-% R∃
+% R?
 build_tree_from_just(rex(WitLine), _LineNum, Formula, FitchLines, unary_node(rex, Formula, SubTree)) :-
     !, build_buss_tree(WitLine, FitchLines, SubTree).
 
-% L∀
+% L?
 build_tree_from_just(lall(UnivLine), _LineNum, Formula, FitchLines, unary_node(lall, Formula, SubTree)) :-
     !, build_buss_tree(UnivLine, FitchLines, SubTree).
 
-% R∀
+% R?
 build_tree_from_just(rall(BodyLine), _LineNum, Formula, FitchLines, unary_node(rall, Formula, SubTree)) :-
     !, build_buss_tree(BodyLine, FitchLines, SubTree).
 
-% L∧→
+% L?->
 build_tree_from_just(landto(Line), _LineNum, Formula, FitchLines, unary_node(landto, Formula, SubTree)) :-
     !, build_buss_tree(Line, FitchLines, SubTree).
 
-% L∨→
+% L?->
 build_tree_from_just(lorto(Line), _LineNum, Formula, FitchLines, unary_node(lorto, Formula, SubTree)) :-
     !, build_buss_tree(Line, FitchLines, SubTree).
 
-% L→→
+% L->->
 build_tree_from_just(ltoto(Line), _LineNum, Formula, FitchLines, unary_node(ltoto, Formula, SubTree)) :-
     !, build_buss_tree(Line, FitchLines, SubTree).
 
@@ -291,7 +291,7 @@ build_tree_from_just(cq_m(Line), _LineNum, Formula, FitchLines, unary_node(cq_m,
     !, build_buss_tree(Line, FitchLines, SubTree).
 
 % =========================================================================
-% RÈGLES D'ÉGALITÉ - AJOUT CRITIQUE
+% REGLES D'EGALITE - AJOUT CRITIQUE
 % =========================================================================
 
 % eq_refl : pas de sous-arbre
@@ -335,7 +335,7 @@ build_tree_from_just(eq_trans_chain, _LineNum, Formula, _FitchLines,
                      axiom_node(Formula)) :- !.
 
 % =========================================================================
-% FALLBACK (DOIT ÊTRE EN DERNIER)
+% FALLBACK (DOIT ETRE EN DERNIER)
 % =========================================================================
 build_tree_from_just(Just, LineNum, Formula, _FitchLines, unknown_node(Just, LineNum, Formula)) :-
     format('% WARNING: Unknown justification type: ~w~n', [Just]).

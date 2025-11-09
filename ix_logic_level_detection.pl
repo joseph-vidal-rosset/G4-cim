@@ -1,12 +1,12 @@
 % =========================================================================
 % LOGIC LEVEL DETECTION - Analyse holophrastique (Quine)
-% Détection automatique : calcul propositionnel vs. calcul des prédicats
+% Detection automatique : calcul propositionnel vs. calcul des predicats
 % =========================================================================
 
 :- dynamic formula_level/1.
 
 % =========================================================================
-% DÉTECTION PRINCIPALE
+% DETECTION PRINCIPALE
 % =========================================================================
 
 detect_and_set_logic_level(Formula) :-
@@ -18,11 +18,11 @@ detect_and_set_logic_level(Formula) :-
     ).
 
 % =========================================================================
-% HEURISTIQUES DE DÉTECTION FOL
+% HEURISTIQUES DE DETECTION FOL
 % Une formule est FOL si elle contient :
-% - Des quantificateurs (∀, ∃)
-% - Des applications de prédicats p(t1,...,tn) avec n > 0
-% - Des égalités entre termes
+% - Des quantificateurs (?, ?)
+% - Des applications de predicats p(t1,...,tn) avec n > 0
+% - Des egalites entre termes
 % - Des fonctions de Skolem
 % =========================================================================
 
@@ -34,7 +34,7 @@ is_fol_formula(Formula) :-
     ), !.
 
 % =========================================================================
-% DÉTECTION DES COMPOSANTS
+% DETECTION DES COMPOSANTS
 % =========================================================================
 
 % Quantificateurs
@@ -47,7 +47,7 @@ contains_quantifier(Term) :-
     contains_quantifier(Arg).
 
 
-% Applications de prédicats (termes composés qui ne sont pas des connecteurs)
+% Applications de predicats (termes composes qui ne sont pas des connecteurs)
 contains_predicate_application(Term) :-
     compound(Term),
     \+ is_logical_connective_structure(Term),
@@ -60,18 +60,18 @@ contains_predicate_application(Term) :-
     member(Arg, Args),
     contains_predicate_application(Arg).
 
-% Structures de connecteurs logiques (à exclure)
+% Structures de connecteurs logiques (a exclure)
 is_logical_connective_structure(_ => _).
 is_logical_connective_structure(_ & _).
 is_logical_connective_structure(_ | _).
 is_logical_connective_structure(_ <=> _).
-is_logical_connective_structure(_ = _).  % Égalité traitée séparément
+is_logical_connective_structure(_ = _).  % Egalite traitee separement
 is_logical_connective_structure(~ _).
 is_logical_connective_structure(#).
 is_logical_connective_structure(![_-_]:_).
 is_logical_connective_structure(?[_-_]:_).
 
-% Égalité
+% Egalite
 contains_equality(_ = _) :- !.
 contains_equality(Term) :-
     compound(Term),

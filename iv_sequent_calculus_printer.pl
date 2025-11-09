@@ -1,11 +1,11 @@
 % =========================================================================
-% G4 PRINTER SPÉCIALISÉ POUR BUSSPROOFS
-% Rendu LaTeX optimisé pour les règles G4 authentiques
+% G4 PRINTER SPECIALISE POUR BUSSPROOFS
+% Rendu LaTeX optimise pour les regles G4 authentiques
 % =========================================================================
 
 :- use_module(library(lists)).
 
-% Directive pour éviter les warnings
+% Directive pour eviter les warnings
 :- discontiguous render_bussproofs/3.
 
 % =========================================================================
@@ -21,7 +21,7 @@ render_bussproofs(ax(Seq, _), VarCounter, FinalCounter) :-
     render_sequent(Seq, VarCounter, FinalCounter),
     write('$}'), nl.
 
-% 2. L0→ 
+% 2. L0-> 
 render_bussproofs(l0cond(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -30,7 +30,7 @@ render_bussproofs(l0cond(Seq, P), VarCounter, FinalCounter) :-
     render_sequent(Seq, TempCounter, FinalCounter),
     write('$}'), nl.
 
-% 3. L∧→ 
+% 3. L?-> 
 render_bussproofs(landto(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -58,7 +58,7 @@ render_bussproofs(tne(Seq, P), VarCounter, FinalCounter) :-
     render_sequent(Seq, TempCounter, FinalCounter),
     write('$}'), nl.
 
-% 4. L∨→ : Disjonction vers implication
+% 4. L?-> : Disjonction vers implication
 render_bussproofs(lorto(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -68,7 +68,7 @@ render_bussproofs(lorto(Seq, P), VarCounter, FinalCounter) :-
     write('$}'), nl.
 
 
-% L∃∨ 
+% L?? 
 render_bussproofs(lex_lor(Seq, P1, P2), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P1, VarCounter, Temp1),
@@ -78,7 +78,7 @@ render_bussproofs(lex_lor(Seq, P1, P2), VarCounter, FinalCounter) :-
     render_sequent(Seq, Temp2, FinalCounter),
     write('$}'), nl.
 
-% 5. L∧ 
+% 5. L? 
 render_bussproofs(land(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -87,7 +87,7 @@ render_bussproofs(land(Seq, P), VarCounter, FinalCounter) :-
     render_sequent(Seq, TempCounter, FinalCounter),
     write('$}'), nl.
 
-% 6. L∨ 
+% 6. L? 
 render_bussproofs(lor(Seq, P1, P2), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P1, VarCounter, Temp1),
@@ -97,7 +97,7 @@ render_bussproofs(lor(Seq, P1, P2), VarCounter, FinalCounter) :-
     render_sequent(Seq, Temp2, FinalCounter),
     write('$}'), nl.
 
-% 7. R→
+% 7. R->
 render_bussproofs(rcond(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -106,7 +106,7 @@ render_bussproofs(rcond(Seq, P), VarCounter, FinalCounter) :-
     render_sequent(Seq, TempCounter, FinalCounter),
     write('$}'), nl.
 
-% 8. R∨ 
+% 8. R? 
 render_bussproofs(ror(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -115,7 +115,7 @@ render_bussproofs(ror(Seq, P), VarCounter, FinalCounter) :-
     render_sequent(Seq, TempCounter, FinalCounter),
     write('$}'), nl.
 
-% 9. L→→ 
+% 9. L->-> 
 render_bussproofs(ltoto(Seq, P1, P2), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P1, VarCounter, Temp1),
@@ -125,7 +125,7 @@ render_bussproofs(ltoto(Seq, P1, P2), VarCounter, FinalCounter) :-
     render_sequent(Seq, Temp2, FinalCounter),
     write('$}'), nl.
 
-% 10. R∧ 
+% 10. R? 
 render_bussproofs(rand(Seq, P1, P2), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P1, VarCounter, Temp1),
@@ -135,7 +135,7 @@ render_bussproofs(rand(Seq, P1, P2), VarCounter, FinalCounter) :-
     render_sequent(Seq, Temp2, FinalCounter),
     write('$}'), nl.
 
-% 11. L⊥
+% 11. L?
 render_bussproofs(lbot(Seq, _), VarCounter, FinalCounter) :-
     !,
     write('\\AxiomC{}'), nl,
@@ -144,7 +144,7 @@ render_bussproofs(lbot(Seq, _), VarCounter, FinalCounter) :-
     render_sequent(Seq, VarCounter, FinalCounter),
     write('$}'), nl.
 
-% IP : Indirect proof (avec détection DNE_m)
+% IP : Indirect proof (avec detection DNE_m)
 render_bussproofs(ip(Seq, P), VarCounter, FinalCounter) :-
     !,
     Seq = (_ > [Goal]),
@@ -159,10 +159,10 @@ render_bussproofs(ip(Seq, P), VarCounter, FinalCounter) :-
     write('$}'), nl.
 
 % =========================================================================
-% RÈGLES DE QUANTIFICATION FOL
+% REGLES DE QUANTIFICATION FOL
 % =========================================================================
 
-% 12. R∀ : Quantificateur universel à droite
+% 12. R? : Quantificateur universel a droite
 render_bussproofs(rall(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -171,7 +171,7 @@ render_bussproofs(rall(Seq, P), VarCounter, FinalCounter) :-
     render_sequent(Seq, TempCounter, FinalCounter),
     write('$}'), nl.
 
-% 13. L∃ : Quantificateur existentiel à gauche
+% 13. L? : Quantificateur existentiel a gauche
 render_bussproofs(lex(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -180,7 +180,7 @@ render_bussproofs(lex(Seq, P), VarCounter, FinalCounter) :-
     render_sequent(Seq, TempCounter, FinalCounter),
     write('$}'), nl.
 
-% 14. R∃ : Quantificateur existentiel à droite
+% 14. R? : Quantificateur existentiel a droite
 render_bussproofs(rex(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -189,7 +189,7 @@ render_bussproofs(rex(Seq, P), VarCounter, FinalCounter) :-
     render_sequent(Seq, TempCounter, FinalCounter),
     write('$}'), nl.
 
-% 15. L∀ : Quantificateur universel à gauche
+% 15. L? : Quantificateur universel a gauche
 render_bussproofs(lall(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -199,10 +199,10 @@ render_bussproofs(lall(Seq, P), VarCounter, FinalCounter) :-
     write('$}'), nl.
 
 % =========================================================================
-% RÈGLES LK CLASSIQUES (si présentes)
+% REGLES LK CLASSIQUES (si presentes)
 % =========================================================================
 
-% L→ classique (si utilisé)
+% L-> classique (si utilise)
 render_bussproofs(lcond(Seq, P1, P2), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P1, VarCounter, Temp1),
@@ -213,7 +213,7 @@ render_bussproofs(lcond(Seq, P1, P2), VarCounter, FinalCounter) :-
     write('$}'), nl.
 
 /*
-% L<=> : Biconditionnelle à gauche (élimination)
+% L<=> : Biconditionnelle a gauche (elimination)
 render_bussproofs(lbicond(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -222,7 +222,7 @@ render_bussproofs(lbicond(Seq, P), VarCounter, FinalCounter) :-
     render_sequent(Seq, TempCounter, FinalCounter),
     write('$}'), nl.
 
-% R<=> : Biconditionnelle à droite (introduction - branchante)
+% R<=> : Biconditionnelle a droite (introduction - branchante)
 render_bussproofs(rbicond(Seq, P1, P2), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P1, VarCounter, Temp1),
@@ -232,7 +232,7 @@ render_bussproofs(rbicond(Seq, P1, P2), VarCounter, FinalCounter) :-
     render_sequent(Seq, Temp2, FinalCounter),
     write('$}'), nl.
 
-% L<=> variante 3 : Substitution dans prédicats
+% L<=> variante 3 : Substitution dans predicats
 render_bussproofs(lbicond_subst(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -242,7 +242,7 @@ render_bussproofs(lbicond_subst(Seq, P), VarCounter, FinalCounter) :-
     write('$}'), nl.
 */
 
-% CQ_c : Règle de conversion classique (∀x:A => B) => ∃x:(A => B)
+% CQ_c : Regle de conversion classique (?x:A => B) => ?x:(A => B)
 render_bussproofs(cq_c(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -251,7 +251,7 @@ render_bussproofs(cq_c(Seq, P), VarCounter, FinalCounter) :-
     render_sequent(Seq, TempCounter, FinalCounter),
     write('$}'), nl.
 
-% CQ_m : Règle de conversion minimale (∃x:A => B) => ∀x:(A => B)
+% CQ_m : Regle de conversion minimale (?x:A => B) => ?x:(A => B)
 render_bussproofs(cq_m(Seq, P), VarCounter, FinalCounter) :-
     !,
     render_bussproofs(P, VarCounter, TempCounter),
@@ -260,15 +260,15 @@ render_bussproofs(cq_m(Seq, P), VarCounter, FinalCounter) :-
     render_sequent(Seq, TempCounter, FinalCounter),
     write('$}'), nl.
 
-% AJOUTEZ après les règles de quantification (ligne ~150)
+% AJOUTEZ apres les regles de quantification (ligne ~150)
 
-% REMPLACEZ toutes les règles d'égalité (ligne ~150) par :
+% REMPLACEZ toutes les regles d'egalite (ligne ~150) par :
 
 % =========================================================================
-% RÈGLES D'ÉGALITÉ - VERSION CORRIGÉE
+% REGLES D'EGALITE - VERSION CORRIGEE
 % =========================================================================
 
-% Réflexivité : Seq = [t = t] (pas de tuple)
+% Reflexivite : Seq = [t = t] (pas de tuple)
 render_bussproofs(eq_refl(Seq), VarCounter, FinalCounter) :-
     !,
     write('\\AxiomC{}'), nl,
@@ -283,7 +283,7 @@ render_bussproofs(eq_refl(Seq), VarCounter, FinalCounter) :-
     ),
     write('$}'), nl.
 
-% Symétrie
+% Symetrie
 render_bussproofs(eq_sym(Seq), VarCounter, FinalCounter) :-
     !,
     write('\\AxiomC{}'), nl,
@@ -292,7 +292,7 @@ render_bussproofs(eq_sym(Seq), VarCounter, FinalCounter) :-
     render_sequent(Seq, VarCounter, FinalCounter),
     write('$}'), nl.
 
-% Transitivité simple
+% Transitivite simple
 render_bussproofs(eq_trans(Seq), VarCounter, FinalCounter) :-
     !,
     write('\\AxiomC{}'), nl,
@@ -301,7 +301,7 @@ render_bussproofs(eq_trans(Seq), VarCounter, FinalCounter) :-
     render_sequent(Seq, VarCounter, FinalCounter),
     write('$}'), nl.
 
-% Transitivité chaînée
+% Transitivite chainee
 render_bussproofs(eq_trans_chain(Seq), VarCounter, FinalCounter) :-
     !,
     write('\\AxiomC{}'), nl,
@@ -319,7 +319,7 @@ render_bussproofs(eq_cong(Seq), VarCounter, FinalCounter) :-
     render_sequent(Seq, VarCounter, FinalCounter),
     write('$}'), nl.
 
-% Substitution dans égalité
+% Substitution dans egalite
 render_bussproofs(eq_subst_eq(Seq), VarCounter, FinalCounter) :-
     !,
     write('\\AxiomC{}'), nl,
@@ -337,7 +337,7 @@ render_bussproofs(eq_subst(Seq), VarCounter, FinalCounter) :-
     render_sequent(Seq, VarCounter, FinalCounter),
     write('$}'), nl.
 
-% Substitution pour équivalence logique
+% Substitution pour equivalence logique
 render_bussproofs(equiv_subst(Seq), VarCounter, FinalCounter) :-
     !,
     write('\\AxiomC{}'), nl,
@@ -347,10 +347,10 @@ render_bussproofs(equiv_subst(Seq), VarCounter, FinalCounter) :-
     write('$}'), nl.
 
 % =========================================================================
-% RÈGLE D'ÉCHEC
+% REGLE D'ECHEC
 % =========================================================================
 /*
-% Antiséquent : échec de preuve
+% Antisequent : echec de preuve
 render_bussproofs(asq(Seq, _), VarCounter, FinalCounter) :-
     !,
     write('\\AxiomC{}'), nl,
@@ -360,28 +360,28 @@ render_bussproofs(asq(Seq, _), VarCounter, FinalCounter) :-
     write('$}'), nl.
 */
 % =========================================================================
-% RENDU DES SÉQUENTS
+% RENDU DES SEQUENTS
 % =========================================================================
 
-% Séquent normal : Γ ⊢ Δ
-% Filtre ⊤ (représenté comme (# => #) ou ~ #) de Γ pour l'affichage
-% Utilise premise_list si disponible pour afficher les prémisses originales
+% Sequent normal : ? ? ?
+% Filtre ? (represente comme (# => #) ou ~ #) de ? pour l'affichage
+% Utilise premise_list si disponible pour afficher les premisses originales
 /*
 render_sequent(G > D, VarCounter, FinalCounter) :-
-    % Vérifier si on a une liste de prémisses originale
+    % Verifier si on a une liste de premisses originale
     ( premise_list(OriginalPremises), OriginalPremises = [_|_] ->
-        % Utiliser la liste originale au lieu de décomposer la conjonction
+        % Utiliser la liste originale au lieu de decomposer la conjonction
         filter_top_from_gamma(OriginalPremises, FilteredG)
     ;
-        % Comportement normal : filtrer ⊤ de G
+        % Comportement normal : filtrer ? de G
         filter_top_from_gamma(G, FilteredG)
     ),
     ( FilteredG = [] ->
-        % Théorème : pas de prémisses à afficher
+        % Theoreme : pas de premisses a afficher
         write(' \\vdash '),
         TempCounter = VarCounter
     ;
-        % Séquent avec prémisses
+        % Sequent avec premisses
         render_formula_list(FilteredG, VarCounter, TempCounter),
         write(' \\vdash ')
     ),
@@ -392,18 +392,18 @@ render_sequent(G > D, VarCounter, FinalCounter) :-
         render_formula_list(D, TempCounter, FinalCounter)
     ).
 */
-% Séquent normal : Γ ⊢ Δ
-% Filtre ⊤ (représenté comme (# => #) ou ~ #) de Γ pour l'affichage
+% Sequent normal : ? ? ?
+% Filtre ? (represente comme (# => #) ou ~ #) de ? pour l'affichage
 render_sequent(G > D, VarCounter, FinalCounter) :-
-    % TOUJOURS utiliser G du séquent, PAS premise_list !
+    % TOUJOURS utiliser G du sequent, PAS premise_list !
     filter_top_from_gamma(G, FilteredG),
     
     ( FilteredG = [] ->
-        % Théorème : pas de prémisses à afficher
+        % Theoreme : pas de premisses a afficher
         write(' \\vdash '),
         TempCounter = VarCounter
     ;
-        % Séquent avec prémisses
+        % Sequent avec premisses
         render_formula_list(FilteredG, VarCounter, TempCounter),
         write(' \\vdash ')
     ),
@@ -415,7 +415,7 @@ render_sequent(G > D, VarCounter, FinalCounter) :-
     ).
 
 
-% filter_top_from_gamma/2: Enlève ⊤ (top) de la liste de prémisses
+% filter_top_from_gamma/2: Enleve ? (top) de la liste de premisses
 filter_top_from_gamma([], []).
 filter_top_from_gamma([H|T], Filtered) :-
     ( is_top_formula(H) ->
@@ -425,13 +425,13 @@ filter_top_from_gamma([H|T], Filtered) :-
         Filtered = [H|RestFiltered]
     ).
 
-% is_top_formula/1: Détecte si une formule est ⊤ (top)
-% ⊤ est représenté comme (# => #) ou parfois ~ #
+% is_top_formula/1: Detecte si une formule est ? (top)
+% ? est represente comme (# => #) ou parfois ~ #
 is_top_formula((# => #)) :- !.
-is_top_formula(((# => #) => #) => #) :- !.  % Double négation de ⊥
+is_top_formula(((# => #) => #) => #) :- !.  % Double negation de ?
 is_top_formula(_) :- fail.
 /*
-% Antiséquent : Γ ⊬ Δ (pour les échecs)
+% Antisequent : ? ? ? (pour les echecs)
 render_antisequent(G > D, VarCounter, FinalCounter) :-
     render_formula_list(G, VarCounter, TempCounter),
     write(' \\nvdash '),
@@ -463,7 +463,7 @@ render_formula_list([F|Rest], VarCounter, FinalCounter) :-
     render_formula_list(Rest, TempCounter, FinalCounter).
 
 % =========================================================================
-% INTÉGRATION AVEC LE SYSTÈME PRINCIPAL
+% INTEGRATION AVEC LE SYSTEME PRINCIPAL
 % =========================================================================
 
 % Interface compatible avec decide/1
@@ -478,18 +478,18 @@ render_g4_bussproofs_from_clean(Proof) :-
 % COMMENTAIRES ET DOCUMENTATION
 % =========================================================================
 
-% Ce printer G4 est spécialement optimisé pour :
+% Ce printer G4 est specialement optimise pour :
 % 
-% 1. LES RÈGLES G4 AUTHENTIQUES :
-%    - L0→ (modus ponens signature de G4)
-%    - L∧→, L∨→ (transformations curryifiées)
-%    - L→→ (règle G4 spéciale)
+% 1. LES REGLES G4 AUTHENTIQUES :
+%    - L0-> (modus ponens signature de G4)
+%    - L?->, L?-> (transformations curryifiees)
+%    - L->-> (regle G4 speciale)
 %    - Ordre exact du multiprover.pl
 %
-% 2. COMPATIBILITÉ MULTIFORMATS :
-%    - Utilise le système rewrite/4 de latex_utilities.pl
+% 2. COMPATIBILITE MULTIFORMATS :
+%    - Utilise le systeme rewrite/4 de latex_utilities.pl
 %    - Compatible avec les quantificateurs FOL
-%    - Gère les antiséquents pour les échecs
+%    - Gere les antisequents pour les echecs
 %
 % 3. RENDU LATEX PROFESSIONNEL :
 %    - bussproofs.sty standard

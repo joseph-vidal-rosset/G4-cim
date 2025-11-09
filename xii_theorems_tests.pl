@@ -3,64 +3,64 @@
 % =================================================================
 % Identity and implication introduction tests
 test_identity_simple :-
-    write('P → P'), nl,
+    write('P -> P'), nl,
     prove(p => p).
 test_identity_complex :-
-    write('P → (Q → P)'), nl,
+    write('P -> (Q -> P)'), nl,
     prove(p => (q => p)).
 test_permutation :-
-    write('P → (Q → (P ∧ Q))'), nl,
+    write('P -> (Q -> (P ? Q))'), nl,
     prove(p => (q => (p & q))).
 % Conjunction tests
 test_conjunction_intro :-
-    write('(P ∧ Q) → (Q ∧ P)'), nl,
+    write('(P ? Q) -> (Q ? P)'), nl,
     prove((p & q) => (q & p)).
 test_conjunction_assoc :-
-    write('((P ∧ Q) ∧ R) → (P ∧ (Q ∧ R))'), nl,
+    write('((P ? Q) ? R) -> (P ? (Q ? R))'), nl,
     prove(((p & q) & r) => (p & (q & r))).
 % Disjunction tests
 test_disjunction_intro :-
-    write('P → (P ∨ Q)'), nl,
+    write('P -> (P ? Q)'), nl,
     prove(p => (p | q)).
 test_disjunction_comm :-
-    write('(P ∨ Q) → (Q ∨ P)'), nl,
+    write('(P ? Q) -> (Q ? P)'), nl,
     prove((p | q) => (q | p)).
 test_disjunction_elim :-
-    write('((P → R) ∧ (Q → R)) → ((P ∨ Q) → R)'), nl,
+    write('((P -> R) ? (Q -> R)) -> ((P ? Q) -> R)'), nl,
     prove(((p => r) & (q => r)) => ((p | q) => r)).
 % Biconditional tests
 test_distrib_disj_over_conj :-
         write('((P | Q) & (P | R)) <=> (P | (Q & R))'),nl,
         prove(((p | q) & (p | r)) <=> (p | (q & r))).
 test_biconditional_intro :-
-    write('(P → Q) → ((Q → P) → (P ↔ Q))'), nl,
+    write('(P -> Q) -> ((Q -> P) -> (P <-> Q))'), nl,
     prove((p => q) => ((q => p) => (p <=> q))).
 test_biconditional_elim :-
-    write('(P ↔ Q) → (P → Q)'), nl,
+    write('(P <-> Q) -> (P -> Q)'), nl,
     prove((p <=> q) => (p => q)).
 % Modus Tollens tests (CORRECTED)
 test_modus_tollens :-
-    write('((P → Q) ∧ ¬Q) → ¬P'), nl,
+    write('((P -> Q) ? !Q) -> !P'), nl,
     prove(((p => q) & ~ q) => ~ p).
 test_modus_tollens_complex :-
-    write('((P → (Q → R)) ∧ ¬R) → (P → ¬Q)'), nl,
+    write('((P -> (Q -> R)) ? !R) -> (P -> !Q)'), nl,
     prove(((p => (q => r)) & ~ r) => (p => ~ q)).
 test_absurdity_chain_m :-
-    write('P -> (¬P → ⊥) '), nl,
+    write('P -> (!P -> ?) '), nl,
     prove(p => (~ p => #)).
 % Negation introduction/elimination tests
 test_negation_intro :-
-    write('(P → ⊥) → ¬P'), nl,
+    write('(P -> ?) -> !P'), nl,
     prove((p => #) => ~ p).
 test_negation_elim :-
-    write('(P ∧ ¬P) → ⊥'), nl,
+    write('(P ? !P) -> ?'), nl,
     prove((p & ~ p) => #).
 % =================================================================
 % 2. INTUITIONISTIC TESTS - NEGATION
 % =================================================================
 % Contradiction tests
 test_contradiction_anything :-
-    write(' ⊥ → P'), nl,
+    write(' ? -> P'), nl,
     prove(# => p).
 test_absurdity_chain_i :-
     write('~  ~  P <=> (~  P => P)'), nl,
@@ -82,53 +82,53 @@ test_dn_classical_contraposition :-
 % =================================================================
 % Indirect proof tests
 test_indirect_proof :-
-    write('¬¬P → P (Double negation elimination)'), nl,
+    write('!!P -> P (Double negation elimination)'), nl,
     prove( ~  ~  p => p).
 test_excluded_middle :-
-    write('Test 3.2: P ∨ ¬P (Excluded middle) [classical]'), nl,
+    write('Test 3.2: P ? !P (Excluded middle) [classical]'), nl,
     prove(p | ~  p).
 test_material_implication :-
-    write('Test 3.3: (P → Q) ↔ (¬P ∨ Q)'), nl,
+    write('Test 3.3: (P -> Q) <-> (!P ? Q)'), nl,
     prove((( ~  p | q) <=> (p => q))).
 % Classical contraposition tests
 test_contraposition_strong :-
-    write('Test 3.4: (¬Q → ¬P) → (P → Q)'), nl,
+    write('Test 3.4: (!Q -> !P) -> (P -> Q)'), nl,
     prove(( ~  q => ~  p) => (p => q)).
 test_absurdity_chain_c :-
-    write('Test 2.5: (¬P → ⊥) → P [may fail in intuitionistic logic]'), nl,
+    write('Test 2.5: (!P -> ?) -> P [may fail in intuitionistic logic]'), nl,
     prove((~ p => #) => p), nl.
 % =================================================================
 % 4. QUANTIFIER TESTS - CORRECTED SYNTAX
 % =================================================================
 % Basic universal tests
 test_universal_intro :-
-    write('Test 4.1: ∀x(P(x) → P(x))'), nl,
+    write('Test 4.1: ?x(P(x) -> P(x))'), nl,
     prove(![x]:(p(x) => p(x))).
 test_universal_elim :-
-    write('Test 4.2: (∀x P(x)) → P(a)'), nl,
+    write('Test 4.2: (?x P(x)) -> P(a)'), nl,
     prove((![x]:p(x)) => p(a)).
 test_universal_distribution :-
-    write('Test 4.3: (∀x(P(x) → Q(x))) → ((∀x P(x)) → (∀x Q(x)))'), nl,
+    write('Test 4.3: (?x(P(x) -> Q(x))) -> ((?x P(x)) -> (?x Q(x)))'), nl,
     prove((![x]:(p(x) => q(x))) => ((![x]:p(x)) => (![x]:q(x)))).
 % Basic existential tests
 test_existential_intro :-
-    write('Test 4.4: P(a) → ∃x P(x)'), nl,
+    write('Test 4.4: P(a) -> ?x P(x)'), nl,
     prove(p(a) => (?[x]:p(x))).
 test_existential_elim :-
-    write('Test 4.5: (∃x P(x)) → (∀x(P(x) → Q)) → Q'), nl,
+    write('Test 4.5: (?x P(x)) -> (?x(P(x) -> Q)) -> Q'), nl,
     prove((?[x]:p(x)) => ((![x]:(p(x) => q)) => q)).
 test_mixed_quantifiers :-
     write('Test 4.6: Valid mixed quantifiers'), nl,
     prove((?[y]:(![x]:p(x,y))) => (![x]:(?[y]:p(x,y)))).
 test_quantifier_negation :-
-    write('Test 4.7: ¬(∀x P(x)) ↔ (∃x ¬P(x))'), nl,
+    write('Test 4.7: !(?x P(x)) <-> (?x !P(x))'), nl,
     catch(prove((~ (![x]:p(x))) <=> (?[x]: ~  p(x))), 
           _, write('May fail - complex equivalence')), nl.
 test_Spinoza :-
         write(' Nothing is contingent '), nl,
         prove((![x]:(~ c(x) <=> (?[y]:n(y,x) | ?[z]:d(z,x))) & ![x]:(?[z]:d(z,x))) => ![x]: ~ c(x)).
 test_Lepage :-
-        write( 'Lepage, Éléments de logique contemporaine, p. 202, ex. 14*-g'), nl,
+        write( 'Lepage, Elements de logique contemporaine, p. 202, ex. 14*-g'), nl,
         prove((![x]:(f(x) <=> g(x)) & ![x]:(h(x) <=> i(x)) & ?[x]:(i(x) & ![y]:(f(y) => j(y)))) => ?[x]:(h(x) & ![y]:(j(y) | ~ g(y)))).
 % =================================================================
 % 5. PREMISE TESTS - PRACTICAL REASONING
@@ -138,18 +138,18 @@ test_modus_ponens :-
     write('Test 5.1: ((P => Q) & P) => Q'), nl,
     prove(((p => q) & p) => q).
 test_hypothetical_syllogism :-
-    write('Test 5.2: ((P → Q) &(Q → R)) => (P → R)'), nl,
+    write('Test 5.2: ((P -> Q) &(Q -> R)) => (P -> R)'), nl,
     prove(((p => q) & (q => r)) => (p => r)).
 test_disjunctive_syllogism :-
-    write('Test 5.3: ((P ∨ Q)& ¬P) => Q'), nl,
+    write('Test 5.3: ((P ? Q)& !P) => Q'), nl,
     prove(((p | q) & ~  p ) => q).
 
 % Complex tests with quantifiers - SIMPLIFIED
 test_universal_instantiation :-
-    write('Test 5.4: {∀x(H(x) → M(x)), H(a)} ⊢ M(a)'), nl,
+    write('Test 5.4: {?x(H(x) -> M(x)), H(a)} ? M(a)'), nl,
     prove((![x]:(h(x) => m(x)) & h(a)) => m(a)).
 test_existential_generalization :-
-    write('Test 5.5: {M(a)} ⊢ ∃x M(x)'), nl,
+    write('Test 5.5: {M(a)} ? ?x M(x)'), nl,
     prove(m(a) => ?[x]:m(x)).
 % =================================================================
 % 6. STRESS TESTS - COMPLEX FORMULAS

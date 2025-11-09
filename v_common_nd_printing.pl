@@ -97,24 +97,24 @@ extract_new_formula(CurrentPremisses, SubProof, _) :-
 % FIND_CONTEXT_LINE : Matcher formules dans le contexte
 % =========================================================================
 % =========================================================================
-% PRIORITÉ ABSOLUE : PRÉMISSES (lignes 1-N où N = nombre de prémisses)
+% PRIORITE ABSOLUE : PREMISSES (lignes 1-N ou N = nombre de premisses)
 % =========================================================================
 
 find_context_line(Formula, Context, LineNumber) :-
     premise_list(PremList),
     length(PremList, NumPremises),
-    % Chercher UNIQUEMENT dans les N premières lignes
+    % Chercher UNIQUEMENT dans les N premieres lignes
     member(LineNumber:ContextFormula, Context),
     LineNumber =< NumPremises,
-    % Matcher avec les différentes variantes possibles
+    % Matcher avec les differentes variantes possibles
     ( ContextFormula = Formula
     ; strip_annotations_match(Formula, ContextFormula)
     ; formulas_equivalent(Formula, ContextFormula)
     ),
-    !.  % Couper dès qu'on trouve dans les prémisses
+    !.  % Couper des qu'on trouve dans les premisses
 
 % =========================================================================
-% PRIORITÉ -1 : NÉGATION DE QUANTIFICATEUR (forme originale ~)
+% PRIORITE -1 : NEGATION DE QUANTIFICATEUR (forme originale ~)
 % =========================================================================
 
 % Cherche (![x-x]:Body) => # mais contexte a ~![x]:Body (forme originale)
@@ -124,15 +124,15 @@ find_context_line((![_Z-_X]:Body) => #, Context, LineNumber) :-
         % Forme originale avec ~
         ContextFormula = (~ ![_]:Body)
     ;
-        % Forme transformée
+        % Forme transformee
         ContextFormula = ((![_]:Body) => #)
     ;
-        % Forme transformée avec annotation
+        % Forme transformee avec annotation
         ContextFormula = ((![_-_]:Body) => #)
     ),
     !.
 
-% Même chose pour l'existentiel
+% Meme chose pour l'existentiel
 find_context_line((?[_Z-_X]:Body) => #, Context, LineNumber) :-
     member(LineNumber:ContextFormula, Context),
     (
@@ -144,9 +144,9 @@ find_context_line((?[_Z-_X]:Body) => #, Context, LineNumber) :-
     ),
     !.
 % =========================================================================
-% PRIORITÉ 0 : QUANTIFICATEURS - MATCHER STRUCTURE INTERNE COMPLEXE
+% PRIORITE 0 : QUANTIFICATEURS - MATCHER STRUCTURE INTERNE COMPLEXE
 % =========================================================================
-% Universel : matcher structure interne indépendamment de la transformation
+% Universel : matcher structure interne independamment de la transformation
 find_context_line(![Z-_]:SearchBody, Context, LineNumber) :-
     member(LineNumber:ContextFormula, Context),
     (
@@ -172,9 +172,9 @@ find_context_line(?[Z-_]:SearchBody, Context, LineNumber) :-
     ),
     !.
 
-% ─────────────────────────────────────────────────────────────────────────
-% PRIORITÉ 1 : NÉGATIONS (notation originale ~ vs transformée => #)
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
+% PRIORITE 1 : NEGATIONS (notation originale ~ vs transformee => #)
+% -------------------------------------------------------------------------
 
 % Cas 1: Cherche ?[x]:A => # mais contexte a ~ ?[x]:A
 find_context_line((?[Z-_]:A) => #, Context, LineNumber) :-
@@ -190,9 +190,9 @@ find_context_line(A => #, Context, LineNumber) :-
     A \= (![_]:_),
     member(LineNumber:(~A), Context), !.
 
-% ─────────────────────────────────────────────────────────────────────────
-% PRIORITÉ 2 : QUANTIFICATEURS (avec/sans annotations de variables)
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
+% PRIORITE 2 : QUANTIFICATEURS (avec/sans annotations de variables)
+% -------------------------------------------------------------------------
 
 % Universel : cherche ![x-x]:Body mais contexte a ![x]:Body
 find_context_line(![Z-_]:Body, Context, LineNumber) :-
@@ -200,7 +200,7 @@ find_context_line(![Z-_]:Body, Context, LineNumber) :-
     (
         ContextFormula = (![Z]:Body)      % Sans annotation
     ;
-        ContextFormula = (![Z-_]:Body)    % Avec annotation différente
+        ContextFormula = (![Z-_]:Body)    % Avec annotation differente
     ),
     !.
 
@@ -210,13 +210,13 @@ find_context_line(?[Z-_]:Body, Context, LineNumber) :-
     (
         ContextFormula = (?[Z]:Body)      % Sans annotation
     ;
-        ContextFormula = (?[Z-_]:Body)    % Avec annotation différente
+        ContextFormula = (?[Z-_]:Body)    % Avec annotation differente
     ),
     !.
 
-% ─────────────────────────────────────────────────────────────────────────
-% PRIORITÉ 3 : BICONDITIONNELLES (décomposées)
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
+% PRIORITE 3 : BICONDITIONNELLES (decomposees)
+% -------------------------------------------------------------------------
 
 find_context_line((A => B) & (B => A), Context, LineNumber) :-
     member(LineNumber:(A <=> B), Context), !.
@@ -224,38 +224,38 @@ find_context_line((A => B) & (B => A), Context, LineNumber) :-
 find_context_line((B => A) & (A => B), Context, LineNumber) :-
     member(LineNumber:(A <=> B), Context), !.
 
-% ─────────────────────────────────────────────────────────────────────────
-% PRIORITÉ 4 : MATCH EXACT
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
+% PRIORITE 4 : MATCH EXACT
+% -------------------------------------------------------------------------
 
 find_context_line(Formula, Context, LineNumber) :-
     member(LineNumber:Formula, Context), !.
 
-% ─────────────────────────────────────────────────────────────────────────
-% PRIORITÉ 5 : UNIFICATION
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
+% PRIORITE 5 : UNIFICATION
+% -------------------------------------------------------------------------
 
 find_context_line(Formula, Context, LineNumber) :-
     member(LineNumber:ContextFormula, Context),
     unify_with_occurs_check(Formula, ContextFormula), !.
 
-% ─────────────────────────────────────────────────────────────────────────
-% PRIORITÉ 6 : STRUCTURE MATCHING
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
+% PRIORITE 6 : STRUCTURE MATCHING
+% -------------------------------------------------------------------------
 
 find_context_line(Formula, Context, LineNumber) :-
     member(LineNumber:ContextFormula, Context),
     match_formula_structure(Formula, ContextFormula), !.
 
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
 % FALLBACK : WARNING si aucune correspondance
-% ─────────────────────────────────────────────────────────────────────────
+% -------------------------------------------------------------------------
 
 find_context_line(Formula, _Context, 0) :-
     format('% WARNING: Formula ~w not found in context~n', [Formula]).
 
 % =========================================================================
-% HELPER : Équivalence de formules (comparaison structurelle pure)
+% HELPER : Equivalence de formules (comparaison structurelle pure)
 % =========================================================================
 
 % Helper : matcher en enlevant les annotations
@@ -295,7 +295,7 @@ formulas_equivalent((A <=> B), (C <=> D)) :-
         (formulas_equivalent(A, D), formulas_equivalent(B, C))
     ).
 
-% Négation transformée
+% Negation transformee
 formulas_equivalent(A => #, ~ B) :- !, formulas_equivalent(A, B).
 formulas_equivalent(~ A, B => #) :- !, formulas_equivalent(A, B).
 
@@ -329,26 +329,26 @@ formulas_equivalent(A => B, C => D) :-
 % Faux
 formulas_equivalent(#, #) :- !.
 
-% Prédicats/Termes : comparer structure (ignorer variables)
+% Predicats/Termes : comparer structure (ignorer variables)
 formulas_equivalent(Term1, Term2) :-
     compound(Term1),
     compound(Term2),
     !,
     Term1 =.. [Functor|_Args1],
     Term2 =.. [Functor|_Args2],
-    % Même foncteur suffit (on ignore les arguments qui sont des variables)
+    % Meme foncteur suffit (on ignore les arguments qui sont des variables)
     !.
 
-% Identité stricte
+% Identite stricte
 formulas_equivalent(A, B) :- A == B, !.
 
-% Fallback : termes atomiques avec même nom
+% Fallback : termes atomiques avec meme nom
 formulas_equivalent(A, B) :- 
     atomic(A), atomic(B),
     !.
 
 % Helper : matcher deux formules par structure (module renommage de variables)
-% Négations
+% Negations
 match_formula_structure(A => #, B => #) :- 
     !, match_formula_structure(A, B).
 match_formula_structure(~A, B => #) :- 
@@ -377,7 +377,7 @@ match_formula_structure(A <=> B, C <=> D) :-
 % Faux
 match_formula_structure(#, #) :- !.
 
-% Égalité stricte
+% Egalite stricte
 match_formula_structure(A, B) :-
     A == B, !.
 
@@ -420,7 +420,7 @@ extract_conjuncts((A & B), CLine, Scope, CurLine, [L1:A, L2:B], L2, VarIn, VarOu
     render_have(Scope, A, Just1, CurLine, L1, VarIn, V1),
     render_have(Scope, B, Just2, L1, L2, V1, VarOut).
 % =========================================================================
-% LOGIQUE DE DÉRIVATION IMMÉDIATE
+% LOGIQUE DE DERIVATION IMMEDIATE
 % =========================================================================
 derive_immediate(Scope, Formula, RuleTerm, JustFormat, JustArgs, CurLine, NextLine, ResLine, VarIn, VarOut) :-
     DerLine is CurLine + 1,
@@ -482,7 +482,7 @@ try_derive_immediately(Goal, Context, Scope, CurLine, NextLine, ResLine, VarIn, 
     derive_immediate(Scope, Goal, RuleTerm, JustFormat, JustArgs, CurLine, NextLine, ResLine, VarIn, VarOut).
 
 % =========================================================================
-% CONSTRUCTION DE LA MAP DES HYPOTHÈSES PARTAGÉES
+% CONSTRUCTION DE LA MAP DES HYPOTHESES PARTAGEES
 % =========================================================================
 
 build_hypothesis_map([], Map, Map).

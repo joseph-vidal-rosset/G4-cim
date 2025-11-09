@@ -1,5 +1,5 @@
 % =========================================================================
-% tests_pelletier.pl (mise à jour : Pel_18 corrigée en formule valide)
+% tests_pelletier.pl (mise a jour : Pel_18 corrigee en formule valide)
 % Suite silencieuse Pelletier + benchmarks avec safe_time_out fallback.
 % =========================================================================
 
@@ -15,7 +15,7 @@
 :- use_module(library(lists)).
 
 % -------------------------------------------------------------------------
-% Timeout configurable (en secondes). Valeur par défaut : 10 secondes.
+% Timeout configurable (en secondes). Valeur par defaut : 10 secondes.
 % -------------------------------------------------------------------------
 :- dynamic pelletier_timeout/1.
 pelletier_timeout(10).
@@ -29,7 +29,7 @@ set_pelletier_timeout(Secs) :-
     ).
 
 % -------------------------------------------------------------------------
-% safe_time_out/3: wrapper robuste pour exécuter Goal avec timeout.
+% safe_time_out/3: wrapper robuste pour executer Goal avec timeout.
 % - If time_out/3 exists, uses it.
 % - Else if call_with_time_limit/2 exists, uses it.
 % - Else runs goal without timeout.
@@ -80,7 +80,7 @@ pelletier_tests([
     'Pel_15_hypothetical_syllogism' - (((p => q) & (q => r)) => (p => r)),
     'Pel_16_existential_preservation' - (((![x]:(p(x) => q(x))) & ?[x]:p(x)) => ?[x]:q(x)),
     'Pel_17_biimp_to_impls' - ((p <=> q) => ((p => q) & (q => p))),
-    % Pel_18 corrected: ∃x (P(x) ∨ Q(x)) ≡ (∃x P(x)) ∨ (∃x Q(x))  (valid)
+    % Pel_18 corrected: ?x (P(x) ? Q(x)) ? (?x P(x)) ? (?x Q(x))  (valid)
     'Pel_18_classical_choice' - ((?[x]:(p(x) | q(x))) <=> (?[x]:p(x) | ?[x]:q(x))),
     'Pel_19_pelletier_sample1' - ((![x]:(p(x) => ?[y]:q(x,y))) => ?[y]:(![x]:(p(x) => q(x,y)))),
     'Extra_01_drinker_variant' - (?[x]:(p(x) => ![y]:(p(y) | q(y)))),
