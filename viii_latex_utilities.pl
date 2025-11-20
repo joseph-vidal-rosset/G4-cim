@@ -855,12 +855,6 @@ render_rule_name(Rule) :- write(Rule).
 % LaTeX FORMULA RENDERING
 % =========================================================================
 
-render_formula_for_buss(Formula) :-
-    catch(
-        (rewrite(Formula, 0, _, LatexFormula), render_latex_formula(LatexFormula)),
-        _Error,
-        (write('???'))
-    ).
 
 render_latex_formula((A ' \\to ' B)) :-
     !,

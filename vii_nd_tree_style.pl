@@ -299,12 +299,26 @@ render_buss_tree(binary_node(Rule, F, TreeA, TreeB)) :-
     write('\\BinaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
 
 % -- Noeuds Ternaires --
+/*
 render_buss_tree(ternary_node(Rule, _HypA, _HypB, F, TreeA, TreeB, TreeC)) :-
     render_buss_tree(TreeA),
     render_buss_tree(TreeB),
     render_buss_tree(TreeC),
     format_rule_label(Rule, Label),
     format('\\RightLabel{\\scriptsize{~w}}~n', [Label]),
+    write('\\TrinaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
+*/
+% -- Noeuds Ternaires --
+render_buss_tree(ternary_node(Rule, HypA, HypB, F, TreeA, TreeB, TreeC)) :-
+    render_buss_tree(TreeA),
+    render_buss_tree(TreeB),
+    render_buss_tree(TreeC),
+    format_rule_label(Rule, Label),
+    ( Rule = lor -> 
+        format('\\RightLabel{\\scriptsize{~w}~w,~w}~n', [Label, HypA, HypB])
+    ; 
+        format('\\RightLabel{\\scriptsize{~w}}~n', [Label])
+    ),
     write('\\TrinaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
 
 % -- Noeuds avec Déchargement (Hypothèses) --

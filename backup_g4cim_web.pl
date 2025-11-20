@@ -1,6 +1,6 @@
 % =========================================================================
-% OPERATEURS COMMUNS - Module centralise
-% A inclure dans tous les modules du prouveur
+%                G4-cim F.O.L. PROVER  -  1.0
+%       cim: Classical, Intutionistic and Minimal Logic 
 % =========================================================================
 :- use_module(library(lists)).
 :- use_module(library(statistics)).
@@ -13,15 +13,12 @@
 :- op(1100, xfy, '|').          % disjunction
 :- op(1110, xfy, =>).           % conditional
 :- op(1120, xfy, <=>).          % biconditional
-:- op( 500, fy, !).             % universal quanti
-:- op( 500, fy, !).             % universal quantifier:  ![X]:
-:- op( 500, fy, ?).             % existential quantifier:  ?[X]:
+:- op( 500, fy, !).             % universal quantifier:  ![x]:
+:- op( 500, fy, ?).             % existential quantifier:  ?[y]:
 :- op( 500, xfy, :).            % quantifier separator
 % Syntaxe d'entree : sequent turnstile
 % Equivalence operator for sequents (bidirectional provability)
 :- op(800, xfx, <>).
-% :- op(400, fx, f).             % falsity (?)
-% :- op(400, fx, #).             % falsity (?)
 % =========================================================================
 % OPERATEURS LATEX (sortie formatee)
 % ATTENTION : Respecter exactement les espaces !
@@ -58,38 +55,20 @@
 % Usage dans les modules :
 % :- [operators].  % Inclure en debut de fichier
 % =========================================================================
-% OPERATEURS POUR SEQUENTS - AJOUT
+% OPERATEURS POUR SEQUENTS: > , <>  
 % =========================================================================
 % =========================================================================
 % UNIFIED OPTIMIZED DRIVER: PATTERN DETECTION + 2-PASS STRATEGY
 % Version with native G4 sequent syntax [Premises] > [Conclusion]
 % =========================================================================
-:- use_module(library(lists)).
-:- use_module(library(statistics)).
-:- use_module(library(terms)).
-% =========================================================================
-% STARTUP BANNER
-% =========================================================================
-% Désactiver le banner automatique de SWI-Prolog
-:- set_prolog_flag(verbose, silent).
-
-% Puis ton initialisation
 :- initialization(show_banner).
 
 show_banner :-
-    write('Welcome to SWI-Prolog (32 bits, version 9.3.34-20-g3517bc35f)'),nl,
-    write('SWI-Prolog comes with ABSOLUTELY NO WARRANTY. This is free software.'),nl,
-    write('For legal details and online help, see https://www.swi-prolog.org'),nl,nl,
-
-    write('*****************************************************************'), nl,
-    write('*                   G4-cim F.O.L. PROVER  -  1.0                *'), nl,
-    write('*         (cim: Classical, Intutionistic and Minimal Logic)     *'), nl,
-    write('*****************************************************************'), nl,
-    nl,
-    write('Write below: '),nl,
-    write('  help. and press Enter to get help'), nl,
-    write('  examples. and press Enter to see examples'), nl,
-    write('  run_all_test_files. and press Enter to see the results of all tests'), nl,
+    write('Enter: '),nl,     
+    write('  help. to get help'), nl,
+    write('  quickref. =  quick reference '), nl,
+    write('  examples. to see examples'), nl,
+    write('  run_all_test_files. to see the results of all tests'), nl,
     nl.
 % =========================================================================
 % ITERATION LIMITS CONFIGURATION
@@ -746,51 +725,79 @@ decide([Left] <> [Right]) :- !,
 
 help :-
     nl,
-    write('*****************************************************************'), nl,
-    write('*                      G4 PROVER GUIDE                          *'), nl,
-    write('*****************************************************************'), nl,
+    write('#################################################################'), nl,
+    write('#                      G4 PROVER GUIDE                          #'), nl,
+    write('#################################################################'), nl,
+    nl,
     write('## MAIN COMMANDS '), nl,
+    nl,
     write('  prove(Formula).            - shows the proofs of Formula'), nl,
     write('  decide(Formula).           - says either true or false'), nl,
+    write('  help.                      - gets help'), nl,
+    write('  examples.                  - shows examples'), nl,
+    nl,
     write('## SYNTAX EXAMPLES '), nl,
+    nl,
     write('  THEOREMS:'), nl,
     write('    prove(p => p).                    - Identity'), nl,
     write('    prove((p & q) => p).              - Conjunction elimination'), nl,
-    write('  SEQUENTS (syntax of G4 prover):'), nl,
-    write('    prove([p] > [p]).                 - Sequent: P |- P '), nl,
-    write('    prove([p, q] > [p & q]).          - Sequent: P , Q |- P & Q '), nl,
-    write('    prove([p => q, p] > [q]).         - Modus Ponens in sequent form'), nl,
+    nl,
+    write('  SEQUENTS (NEW - G4 native syntax):'), nl,
+    write('    prove([p] > [p]).                 - Sequent: $P \\vdash P$ '), nl,
+    write('    prove([p, q] > [p & q]).          - Sequent: $P , Q \\vdash P \\land Q$ '), nl,
+    write('    prove([p => q, p] > [q]).         - Modus Ponens sequent'), nl,
+    nl,
     write('  BICONDITIONALS:'), nl,
-    write('    prove(p <=> ~ ~ p).                - Biconditional of Double Negation '), nl,
-    write('    prove(p <> ~ ~ p).                 - Bi-implication of Double Negation (sequents)'), nl,
+    write('    prove(p <=> ~ ~ p).                 - Double negation (classical)'), nl,
+    nl,
     write('## COMMON MISTAKES '), nl,
+    nl,
     write('   [p] => [p]          - WRONG (use > for sequents)'), nl,
     write('   [p] > [p]           - CORRECT (sequent syntax)'), nl,
+    nl,
     write('   p > q               - WRONG (use => for conditional)'), nl,
     write('   p => q              - CORRECT (conditional)'), nl,
+    nl,
     write('   x <=> y in FOL      - WRONG (use = for equality)'), nl,
     write('   x = y in FOL        - CORRECT (equality)'), nl,
+    nl,
     write('## LOGICAL OPERATORS '), nl,
-    write('  ~ A , (A & B) , (A | B) , (A => B) , (A <=> B) ,  # , ![x]:A ,  ?[x]:A').
+    write('  ~ A , (A & B) , (A | B) , (A => B) , (A <=> B) ,  # , ![x]:A ,  ?[x]:A'), nl,
+    nl.
 
 examples :-
     nl,
-    write('*****************************************************************'), nl,
-    write('*                     EXAMPLES                                  *'), nl,
-    write('*****************************************************************'), nl,
+    write('#################################################################'), nl,
+    write('#                     EXAMPLES                                  #'), nl,
+    write('#################################################################'), nl,
     nl,
     write('  % Identity theorem'), nl,
     write('  ?- prove(p => p).'), nl,
-    write('  % Sequent with single premiss'), nl,
+    nl,
+    write('  % Sequent: single premise'), nl,
     write('  ?- prove([p] > [p]).'), nl,
-    write('  % Sequent with multiple premisses'), nl,
+    nl,
+    write('  % Sequent: multiple premises'), nl,
     write('  ?- prove([p, q] > [p & q]).'), nl,
+    nl,
     write('  % Sequent: modus ponens'), nl,
     write('  ?- prove([p => q, p] > [q]).'), nl,
-    write('  % Law of Excluded Middle (classical)'), nl,
-    write('  ?- prove(~ p | p).'), nl,
-    write('  % Drinker Paradox (classical)'), nl,
-    write('  ?- prove(?[y]:(d(y) => ![x]:d(x))).'), nl,
+    nl,
+    write('  % LEM (classical)'), nl,
+    write('  ?- prove(p | ~p).'), nl,
+    nl.
+
+quickref :-
+    nl,
+    write('#################################################################'), nl,
+    write('#                        QUICK REFERENCE                        #'), nl,
+    write('#################################################################'), nl,
+    nl,
+    write('  THEOREMS: prove(Formula)'), nl,
+    write('  SEQUENTS: prove([Premises] > [Conclusion])'), nl,
+    write('  BICOND:   prove(A <=> B)'), nl,
+    nl,
+    write('  prove(Formula).  decide(Formula).  help.'), nl,
     nl.
 
 % ============================================
@@ -2978,16 +2985,12 @@ render_buss_tree(binary_node(Rule, F, TreeA, TreeB)) :-
     write('\\BinaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
 
 % -- Noeuds Ternaires --
-render_buss_tree(ternary_node(Rule, HypA, HypB, F, TreeA, TreeB, TreeC)) :-
+render_buss_tree(ternary_node(Rule, _HypA, _HypB, F, TreeA, TreeB, TreeC)) :-
     render_buss_tree(TreeA),
     render_buss_tree(TreeB),
     render_buss_tree(TreeC),
     format_rule_label(Rule, Label),
-    ( Rule = lor -> 
-        format('\\RightLabel{\\scriptsize{~w}~w,~w}~n', [Label, HypA, HypB])
-    ; 
-        format('\\RightLabel{\\scriptsize{~w}}~n', [Label])
-    ),
+    format('\\RightLabel{\\scriptsize{~w}}~n', [Label]),
     write('\\TrinaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
 
 % -- Noeuds avec Déchargement (Hypothèses) --
@@ -3033,7 +3036,7 @@ format_rule_label(cq_m, '$CQ_m$').
 format_rule_label(eq_refl, 'Refl').
 format_rule_label(eq_sym, 'Sym').
 format_rule_label(eq_trans, 'Trans').
-format_rule_label(eq_subst, 'Leibniz').
+format_rule_label(eq_subst, 'Subst').
 format_rule_label(eq_cong, 'Cong').
 format_rule_label(eq_subst_eq, 'SubstEq').
 format_rule_label(X, X). % Fallback
@@ -5308,6 +5311,45 @@ run_fol_seq :-
     
     write('=== MODUS PONENS WITH QUANTIFIERS ==='), nl,
     test_seq_forall_mp, nl,
+    test_seq_exists_mp, nl,
+    
+    write('=== CLASSICAL FOL ==='), nl,
+    test_seq_barber_paradox, nl,
+    test_seq_drinker, nl,
+    
+    write('=== SYLLOGISMS ==='), nl,
+    test_seq_barbara, nl,
+    test_seq_darii, nl,
+    test_seq_socrates, nl,
+    
+    write('=== EQUALITY ==='), nl,
+    test_seq_eq_reflexive, nl,
+    test_seq_eq_symmetric, nl,
+    test_seq_eq_transitive, nl,
+    test_seq_eq_substitution, nl,
+    test_seq_eq_congruence, nl,
+    
+    write('=== COMPLEX FOL ==='), nl,
+    test_seq_spinoza, nl,
+    test_seq_lepage, nl,
+    
+    write('=== BICONDITIONALS ==='), nl,
+    test_seq_bicond_left, nl,
+    test_seq_bicond_right, nl,
+    test_seq_bicond_quantifier, nl,
+    
+    write('========================================'), nl,
+    write('FOL SEQUENT TEST SUITE END'), nl,
+    write('========================================'), nl.
+
+run_quick_fol_sequent_tests :-
+    write('=== QUICK FOL SEQUENT TESTS ==='), nl,
+    test_seq_forall_elim, nl,
+    test_seq_exists_intro, nl,
+    test_seq_socrates, nl,
+    test_seq_eq_transitive, nl,
+    write('=== QUICK TESTS END ==='), nl.
+forall_mp, nl,
     test_seq_exists_mp, nl,
     
     write('=== CLASSICAL FOL ==='), nl,
