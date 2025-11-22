@@ -31,13 +31,24 @@ render_nd_tree_proof(Proof) :-
                 render_premise_list_silent(PremissList, 0, 1, NextLine, InitialContext),
                 LastPremLine is NextLine - 1,
                 % Capture ResLine (6ème argument) qui est la ligne de conclusion
-                with_output_to(atom(_), fitch_g4_proof(Proof, InitialContext, 1, LastPremLine, _, ResLine, 0, _))
+                with_output_to(atom(_), fitch_g4_proof(Proof, InitialContext, 1, LastPremLine, _, _ResLine, 0, _)),
+                
+                % FIX: Trouver la dernière ligne qui N'EST PAS une prémisse
+                findall(N, (fitch_line(N, _, Just, _), Just \= premise), DerivedLines),
+                ( DerivedLines = [] ->
+                    % Pas de ligne dérivée, utiliser la dernière prémisse (cas axiome pur)
+                    RootLine = LastPremLine
+                ;
+                    % Utiliser la dernière ligne dérivée
+                    max_list(DerivedLines, RootLine)
+                )
             ;
                 % Pas de prémisses
-                with_output_to(atom(_), fitch_g4_proof(Proof, [], 1, 0, _, ResLine, 0, _))
+                with_output_to(atom(_), fitch_g4_proof(Proof, [], 1, 0, _, ResLine, 0, _)),
+                RootLine = ResLine
             ),
-            % Utilisation de ResLine comme racine de l'arbre
-            collect_and_render_tree(ResLine)
+            % Utilisation de RootLine comme racine de l'arbre
+            collect_and_render_tree(RootLine)
         ),
         Error,
         (
@@ -375,3 +386,6 @@ format_rule_label(X, X). % Fallback
 render_formula_for_buss(F) :-
     rewrite(F, 0, _, Latex),
     write(Latex).
+%========================================================================
+% END OF TREE STYLE PRINTER
+%========================================================================
