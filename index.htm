@@ -57,7 +57,7 @@
             
             try {
                 addOutput('Loading G4-cim prover...');
-                const response = await fetch('g4cim_web.pl');
+                const response = await fetch('g4mic_web.pl');
                 const code = await response.text();
                 await swipl.prolog(code);
                 addOutput('✅ Prover loaded');

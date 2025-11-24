@@ -3017,16 +3017,7 @@ render_buss_tree(binary_node(Rule, F, TreeA, TreeB)) :-
     format('\\RightLabel{\\scriptsize{~w}}~n', [Label]),
     write('\\BinaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
 
-% -- Noeuds Ternaires --
-/*
-render_buss_tree(ternary_node(Rule, _HypA, _HypB, F, TreeA, TreeB, TreeC)) :-
-    render_buss_tree(TreeA),
-    render_buss_tree(TreeB),
-    render_buss_tree(TreeC),
-    format_rule_label(Rule, Label),
-    format('\\RightLabel{\\scriptsize{~w}}~n', [Label]),
-    write('\\TrinaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
-*/
+
 % -- Noeuds Ternaires --
 render_buss_tree(ternary_node(Rule, HypA, HypB, F, TreeA, TreeB, TreeC)) :-
     render_buss_tree(TreeA),
@@ -3045,14 +3036,14 @@ render_buss_tree(discharged_node(Rule, HypNum, F, SubTree)) :-
     render_buss_tree(SubTree),
     format_rule_label(Rule, BaseLabel),
     % Indique l'indice de l'hypothèse déchargée à côté de la règle
-    format('\\RightLabel{\\scriptsize{~w}~w}', [BaseLabel, HypNum]), nl,
+    format('\\RightLabel{\\scriptsize{~w} ~w}', [BaseLabel, HypNum]), nl,
     write('\\UnaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
 
 % Cas spécial pour exists elimination
 render_buss_tree(discharged_node(lex, WitNum, F, ExistTree, GoalTree)) :-
     render_buss_tree(ExistTree),
     render_buss_tree(GoalTree),
-    format('\\RightLabel{\\scriptsize{$\\exists E$}~w}', [WitNum]), nl,
+    format('\\RightLabel{\\scriptsize{$\\exists E$} ~w}', [WitNum]), nl,
     write('\\BinaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
 
 % Fallback
@@ -3083,7 +3074,7 @@ format_rule_label(cq_m, '$CQ_m$').
 format_rule_label(eq_refl, 'Refl').
 format_rule_label(eq_sym, 'Sym').
 format_rule_label(eq_trans, 'Trans').
-format_rule_label(eq_subst, 'Subst').
+format_rule_label(eq_subst, '$ Leibniz $').
 format_rule_label(eq_cong, 'Cong').
 format_rule_label(eq_subst_eq, 'SubstEq').
 format_rule_label(X, X). % Fallback
@@ -3095,9 +3086,12 @@ format_rule_label(X, X). % Fallback
 % =========================================================================
 % HELPER: WRAPPER POUR REWRITE
 % =========================================================================
+% CORRIGE: Utilise write_formula_with_parens/1 pour gerer correctement
+% le parenthesage des formules complexes dans les conditionnels.
+% Exemple: (P & Q) -> R  et non  P & Q -> R
 render_formula_for_buss(F) :-
     rewrite(F, 0, _, Latex),
-    write(Latex).
+    write_formula_with_parens(Latex).
 
 render_formula_for_buss(Formula) :-
     catch(

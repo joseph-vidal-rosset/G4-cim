@@ -1,7 +1,7 @@
-// G4-cim Web Interface Client (CGI version)
+// G4-mic Web Interface Client (CGI version)
 // Appelle directement le script CGI - pas de serveur permanent
 
-const API_URL = '/G4-cim/g4cim.cgi';  // Script CGI appelé par Apache
+const API_URL = '/G4-mic/g4mic.cgi';  // Script CGI appelé par Apache
 
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {

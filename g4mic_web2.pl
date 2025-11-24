@@ -3018,16 +3018,6 @@ render_buss_tree(binary_node(Rule, F, TreeA, TreeB)) :-
     write('\\BinaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
 
 % -- Noeuds Ternaires --
-/*
-render_buss_tree(ternary_node(Rule, _HypA, _HypB, F, TreeA, TreeB, TreeC)) :-
-    render_buss_tree(TreeA),
-    render_buss_tree(TreeB),
-    render_buss_tree(TreeC),
-    format_rule_label(Rule, Label),
-    format('\\RightLabel{\\scriptsize{~w}}~n', [Label]),
-    write('\\TrinaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
-*/
-% -- Noeuds Ternaires --
 render_buss_tree(ternary_node(Rule, HypA, HypB, F, TreeA, TreeB, TreeC)) :-
     render_buss_tree(TreeA),
     render_buss_tree(TreeB),
@@ -3045,14 +3035,14 @@ render_buss_tree(discharged_node(Rule, HypNum, F, SubTree)) :-
     render_buss_tree(SubTree),
     format_rule_label(Rule, BaseLabel),
     % Indique l'indice de l'hypothèse déchargée à côté de la règle
-    format('\\RightLabel{\\scriptsize{~w}~w}', [BaseLabel, HypNum]), nl,
+    format('\\RightLabel{\\scriptsize{~w} ~w}', [BaseLabel, HypNum]), nl,
     write('\\UnaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
 
 % Cas spécial pour exists elimination
 render_buss_tree(discharged_node(lex, WitNum, F, ExistTree, GoalTree)) :-
     render_buss_tree(ExistTree),
     render_buss_tree(GoalTree),
-    format('\\RightLabel{\\scriptsize{$\\exists E$}~w}', [WitNum]), nl,
+    format('\\RightLabel{\\scriptsize{$\\exists E$} ~w}', [WitNum]), nl,
     write('\\BinaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
 
 % Fallback
@@ -3083,7 +3073,7 @@ format_rule_label(cq_m, '$CQ_m$').
 format_rule_label(eq_refl, 'Refl').
 format_rule_label(eq_sym, 'Sym').
 format_rule_label(eq_trans, 'Trans').
-format_rule_label(eq_subst, 'Subst').
+format_rule_label(eq_subst, '$ Leibniz $').
 format_rule_label(eq_cong, 'Cong').
 format_rule_label(eq_subst_eq, 'SubstEq').
 format_rule_label(X, X). % Fallback
@@ -3549,20 +3539,7 @@ rewrite((![X-X]:A), J, K, (' \\forall ' X ' ' C)) :-
 rewrite((?[X-X]:A), J, K, (' \\exists ' X ' ' C)) :-
     !,
     rewrite(A, J, K, C).
-/*
-% QUANTIFICATEURS : Adapter les formules directement
-rewrite((![_X]:A), J, K, (' \\forall ' VarName ' ' C)) :-
-    !,
-    rewrite_name(J, VarName),
-    J1 is J + 1,
-    rewrite(A, J1, K, C).
 
-rewrite((?[_X]:A), J, K, (' \\exists ' VarName ' ' C)) :-
-    !,
-    rewrite_name(J, VarName),
-    J1 is J + 1,
-    rewrite(A, J1, K, C).
-*/
 rewrite((![X]:A), J, K, (' \\forall ' X ' ' C)) :-
     !,
     rewrite(A, J, K, C).  % Garder le même compteur
@@ -3574,17 +3551,6 @@ rewrite((?[X]:A), J, K, (' \\exists ' X ' ' C)) :-
 % SIMPLIFICATION ELEGANTE DES PREDICATS
 % P(x,y,z) -> Pxyz pour tous les predicats
 % =========================================================================
-/*
-rewrite(Pred, J, K, SimplePred) :-
-    Pred =.. [F|Args],
-    atom(F),
-    Args \= [],
-    all_simple_terms(Args),
-    !,
-    toggle(F, G),
-    rewrite_args_list(Args, J, K, SimpleArgs),
-    concatenate_all([G|SimpleArgs], SimplePred).
-*/
 
 % --- Replace the previous "concatenate predicate name and args" clause by this safer version.
 % We avoid applying this cosmetic concatenation to equality and other logical operators.
