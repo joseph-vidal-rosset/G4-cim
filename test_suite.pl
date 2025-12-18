@@ -24,7 +24,7 @@
 :- op( 500, fy, ' \\exists ').   % existential quantifier
 :- op( 500, xfy, ' ').           % espace pour quantificateurs
 :- op(400, fx, ' \\bot ').      % falsity (#)
-% Syntaxe LaTeX : sequent turnstile  
+% Syntaxe LaTeX : sequent turnstile
 :- op(1150, xfx, ' \\vdash ').
 
 % ============================================
@@ -34,22 +34,22 @@
 %! run_all_test_files
 %  Execute l'integralite de la suite de tests avec mesure du temps
 %  Inclut : tests unitaires, sequents FOL/Prop, Pelletier
-run_all_test_files :- 
+run_all_test_files :-
     get_time(StartTime),
     writeln(''),
     writeln('##############################################'),
     writeln('#   START OF THE COMPLETE SERIES OF TESTS    #'),
     writeln('##############################################'),
     format('Start : ~w~n~n', [StartTime]),
-    
+
     safe_run(run_all_tests, ' FOL Theorems '),
     safe_run(run_prop_seq, 'Propositional sequents'),
     safe_run(run_fol_seq, 'FOL Valid Sequents'),
     safe_run(run_pelletier, 'Pelletier Problems'),
-    
+
     get_time(EndTime),
     ElapsedTime is EndTime - StartTime,
-    
+
     writeln(''),
     writeln('##############################################'),
     writeln('#    END OF THE COMPLETE SERIES OF TESTS     #'),
@@ -63,17 +63,17 @@ safe_run(Goal, Name) :-
     format('~n--- ~w ---~n', [Name]),
     get_time(Start),
     catch(
-        (call(Goal) -> 
-            (get_time(End), 
+        (call(Goal) ->
+            (get_time(End),
              Duration is End - Start,
-             format('? ~w : SUCCES (~2f secondes)~n', [Name, Duration])) 
-        ; 
-            (get_time(End), 
+             format('? ~w : SUCCES (~2f secondes)~n', [Name, Duration]))
+        ;
+            (get_time(End),
              Duration is End - Start,
              format('? ~w : ECHEC (~2f secondes)~n', [Name, Duration]))
         ),
         Error,
-        (get_time(End), 
+        (get_time(End),
          Duration is End - Start,
          format('? ~w : ERREUR - ~w (~2f secondes)~n', [Name, Error, Duration]))
     ).
@@ -421,11 +421,12 @@ test_quantifier_negation :-
 test_Spinoza :-
         write('35. Spinoza: "nothing is contingent" '), nl,
         prove((![x]:(~ c(x) <=> (?[y]:n(y,x) | ?[z]:d(z,x))) & ![x]:(?[z]:d(z,x))) => ![x]: ~ c(x)).
-/*
 test_Lepage :-
         write( '36. Lepage, Elements de logique contemporaine, p. 202, ex. 14*-g'), nl,
         prove((![x]:(f(x) <=> g(x)) & ![x]:(h(x) <=> i(x)) & ?[x]:(i(x) & ![y]:(f(y) => j(y)))) => ?[x]:(h(x) & ![y]:(j(y) | ~ g(y)))).
-  */
+test_Bostock :-
+      write('36-bis Bostock, Intermediate Logic, p. 279'), nl,
+      prove(![x]:(?[y]:(f(x) & g(y))) => ?[y]:(![x]:(f(x) & g(y)))).
 test_fol_instantiation :-
     write('37.'), nl,
     prove(![x]:p(x) => ?[x]:p(x)), nl.
@@ -493,7 +494,7 @@ run_all_tests :-
     test_absurdity_chain_m,nl,
     test_negation_intro, nl,
     test_negation_elim, nl,
-    
+
     % Intuitionistic tests
     write('=== INTUITIONISTIC LOGIC ==='), nl,
     test_contradiction_anything, nl,
@@ -501,15 +502,14 @@ run_all_tests :-
     test_dn_Peirce, nl,
     test_dn_Dummett,nl,
     test_dn_classical_contraposition,nl,
-    
- 
+
     % Classical tests
     write('=== CLASSICAL LOGIC ==='), nl,
     test_indirect_proof, nl,
     test_excluded_middle, nl,
     test_material_implication, nl,
     test_contraposition_strong, nl,
-    
+
     % Quantifier tests
     write('=== QUANTIFIERS ==='), nl,
     test_universal_intro, nl,
@@ -520,25 +520,26 @@ run_all_tests :-
     test_mixed_quantifiers, nl,
     test_quantifier_negation, nl,
     test_Spinoza,nl,
-    % test_Lepage,nl,
+    test_Lepage,nl,
+    test_Bostock,nl,
     test_fol_instantiation,nl,
     test_fol_quantifiers_permutation,nl,
     test_russell_paradox,nl,
-    
-   
+
+
     write('=== Usual logical truths ==='), nl,
     test_modus_ponens, nl,
     test_hypothetical_syllogism, nl,
     test_disjunctive_syllogism, nl,
     test_universal_instantiation, nl,
     test_existential_generalization, nl,
-    
+
     % Stress tests
     write('=== STRESS TESTS ==='), nl,
    % test_complex_formula_1, nl,
     test_complex_formula_2, nl,
     test_Pelletier_17,nl,
-    
+
     write('========================================'), nl,
     write('TEST SUITE END'), nl,
     write('========================================'), nl,
@@ -559,7 +560,7 @@ test_mt_only :-
 % =========================================================================
 % TESTS FOL - FORMULES SIMPLES
 % =========================================================================
-   
+
 %=================================================================
 % SEQUENT TESTS - PROPOSITIONAL LOGIC ONLY
 % Tests for sequents with premises (avoiding classical disjunction theorems)
@@ -752,12 +753,12 @@ run_prop_seq :-
     write('========================================'), nl,
     write('SEQUENT TESTS - PROPOSITIONAL LOGIC'), nl,
     write('========================================'), nl, nl,
-    
+
     write('=== 1. BASIC SEQUENTS ==='), nl,
     test_seq_identity_premise,
     test_seq_weakening,
     test_seq_implication_intro,
-    
+
     write('=== 2. CONJUNCTION SEQUENTS ==='), nl,
     test_seq_conjunction_intro,
     test_seq_conjunction_elim_left,
@@ -765,21 +766,21 @@ run_prop_seq :-
     test_seq_conjunction_comm,
     test_seq_conjunction_assoc,
     test_seq_conjunction_nested,
-    
+
     write('=== 3. IMPLICATION SEQUENTS ==='), nl,
     test_seq_modus_ponens,
     test_seq_hypothetical_syllogism,
     test_seq_implication_chain,
     test_seq_curry,
     test_seq_uncurry,
-    
+
     write('=== 4. DISJUNCTION SEQUENTS ==='), nl,
     test_seq_disj_intro_left,
     test_seq_disj_intro_right,
     test_seq_disj_elim,
     test_seq_disj_syllogism,
     test_seq_disj_comm,
-    
+
     write('=== 5. NEGATION SEQUENTS ==='), nl,
     test_seq_negation_intro,
     test_seq_negation_elim,
@@ -787,24 +788,24 @@ run_prop_seq :-
     test_seq_modus_tollens,
     test_seq_contraposition_weak,
     test_seq_double_negation_intro,
-    
+
     write('=== 6. BICONDITIONAL SEQUENTS ==='), nl,
     test_seq_biconditional_intro,
     test_seq_biconditional_elim_left,
     test_seq_biconditional_elim_right,
     test_seq_biconditional_modus_ponens,
-    
+
     write('=== 7. COMPLEX SEQUENTS ==='), nl,
     test_seq_complex_1,
     test_seq_complex_2,
     test_seq_complex_3,
     test_seq_complex_4,
-    
+
     write('=== 8. DOUBLE NEGATION SEQUENTS ==='), nl,
     test_seq_dn_peirce,
     test_seq_dn_lem,
     test_seq_dn_dummett,
-    
+
     write('========================================'), nl,
     write('SEQUENT TESTS END'), nl,
     write('========================================'), nl,
@@ -940,7 +941,7 @@ test_seq_spinoza :-
         ![x]:(~ c(x) <=> (?[y]:n(y,x) | ?[z]:d(z,x))),
         ![x]:(?[z]:d(z,x))
     ] > [![x]: ~ c(x)]).
-/*
+
 test_seq_lepage :-
     write('104. Lepage'), nl,
     prove([
@@ -948,7 +949,17 @@ test_seq_lepage :-
         ![x]:(h(x) <=> i(x)),
         ?[x]:(i(x) & ![y]:(f(y) => j(y)))
     ] > [?[x]:(h(x) & ![y]:(j(y) | ~ g(y)))]).
-*/
+
+test_seq_bostock :-
+    write('104-bis. Bostock, p. 258'), nl,
+    prove([
+           ![x]:(?[y]:(f(x) & g(y)))
+             ]
+         >
+         [
+             ?[y]:(![x]:(f(x) & g(y)))
+         ]
+         ).
 % =================================================================
 % BICONDITIONAL SEQUENTS
 % =================================================================
@@ -965,62 +976,87 @@ test_seq_bicond_quantifier :-
     write('107.'), nl,
     prove([![x]:(p(x) <=> q(x)), p(a)] > [q(a)]).
 
+test_antisequent_one :-
+    write('109.'), nl,
+    prove(f(a) => (![x]:f(x))).
+
+test_antisequent_two :-
+    write('110.'), nl,
+    prove((a | b) => (a & b)).
+
+
+test_antisequent_three :-
+    write('111. Pelletier 09.'), nl,
+    prove((![x]:(?[y]:r(x,y))) => (?[y]:(![x]:r(x,y)))).
+
+% =================================================================
+
 % =================================================================
 % TEST RUNNERS
 % =================================================================
 
 run_fol_seq :-
-        retractall(fitch_line(_, _, _, _)),      % <- Nettoyage global
+    retractall(fitch_line(_, _, _, _)),      % <- Nettoyage global
     retractall(abbreviated_line(_)),
     write('========================================'), nl,
     write('FOL SEQUENT TEST SUITE START'), nl,
     write('========================================'), nl, nl,
-    
     write('=== BASIC QUANTIFIERS ==='), nl,
     test_seq_exists_intro, nl,
     test_seq_exists_elim, nl,
-    
+
     write('=== QUANTIFIER DISTRIBUTION ==='), nl,
     test_seq_forall_distribution, nl,
     test_seq_exists_distribution, nl,
     test_seq_mixed_quantifiers, nl,
-    
+
     write('=== QUANTIFIER NEGATION ==='), nl,
     test_seq_neg_exists, nl,
     test_seq_neg_forall, nl,
-    
+
     write('=== MODUS PONENS WITH QUANTIFIERS ==='), nl,
     test_seq_forall_mp, nl,
     test_seq_exists_mp, nl,
-    
+
     write('=== CLASSICAL FOL ==='), nl,
     test_seq_barber_paradox, nl,
     test_seq_drinker, nl,
-    
+
     write('=== SYLLOGISMS ==='), nl,
     test_seq_barbara, nl,
     test_seq_darii, nl,
     test_seq_socrates, nl,
-    
+
     write('=== EQUALITY ==='), nl,
     test_seq_eq_reflexive, nl,
     test_seq_eq_symmetric, nl,
     test_seq_eq_transitive, nl,
     test_seq_eq_substitution, nl,
     test_seq_eq_congruence, nl,
-    
+
     write('=== COMPLEX FOL ==='), nl,
     test_seq_spinoza, nl,
-   % test_seq_lepage, nl,
-    
+    test_seq_lepage, nl,
+    test_seq_bostock,nl,
+
     write('=== BICONDITIONALS ==='), nl,
     test_seq_bicond_left, nl,
     test_seq_bicond_right, nl,
     test_seq_bicond_quantifier, nl,
-    
+
     write('========================================'), nl,
     write('FOL SEQUENT TEST SUITE END'), nl,
-    write('========================================'), nl.
+    write('========================================'), nl,
+
+   write('========================================'), nl,
+   write('  ANTISEQUENTS TESTS SUITE START'), nl,
+   write('========================================'), nl,
+   test_antisequent_one,nl,
+   test_antisequent_two,nl,
+   test_antisequent_three,nl,
+   write('========================================'), nl,
+   write('  ANTISEQUENTS TESTS SUITE END'), nl,
+   write('========================================'), nl,
 
 run_quick_fol_sequent_tests :-
     write('=== QUICK FOL SEQUENT TESTS ==='), nl,

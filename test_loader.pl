@@ -10,7 +10,7 @@
 % IMPORTANT: Uncomment ONE of these lines depending on your setup:
 
 % If using the fixed web2 version:
-:- ['g4mic_web.pl'].
+:- ['viii_g4mic_driver.pl'].
 
 % If using the original web_en version:
 % :- ['g4mic_web_en.pl'].
@@ -23,14 +23,14 @@
 % Verify that required predicates exist
 % =========================================================================
 :- initialization((
-    (current_predicate(prove/1) -> 
-        writeln('✓ Main prover loaded successfully')
-    ;   writeln('✗ ERROR: Main prover not loaded!'),
-        writeln('  Please load g4mic_web_en.pl or g4mic_web2_fixed.pl first'),
-        writeln('  Example: ?- [''g4mic_web_en.pl''].'),
-        fail
-    )
-)).
+                         (current_predicate(prove/1) ->
+                              writeln('✓ Main prover loaded successfully'),
+                              flush_output
+                         ;   writeln('✗ ERROR: Main prover not loaded!'),
+                             flush_output,
+                             fail
+                         )
+                     )).
 
 % =========================================================================
 % Now load the test suite
