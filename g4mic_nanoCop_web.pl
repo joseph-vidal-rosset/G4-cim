@@ -1,18 +1,3 @@
-% G4-mic: Automated theorem prover for minimal, intuitionistic and classical logic
-% Copyright (C) 2025 Joseph Vidal-Rosset
-% This program is free software: you can redistribute it and/or modify
-% it under the terms of the GNU General Public License as published by
-% the Free Software Foundation, either version 3 of the License, or
-% (at your option) any later version.
-%
-% This program is distributed in the hope that it will be useful,
-% but WITHOUT ANY WARRANTY; without even the implied warranty of
-% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-% GNU General Public License for more details.
-%
-% You should have received a copy of the GNU General Public License
-% along with this program.  If not, see <https://www.gnu.org/licenses/>.
-% =========================================================================
 % COMMON OPERATORS - Centralized module
 % To include in all prover modules
 % =========================================================================
@@ -384,6 +369,9 @@ prove(Left <=> Right) :- !,
         nl,
         fail
     ;
+        % ═══════════════════════════════════════════════════════════════
+        % PHASE 1 & 2: G4MIC PROOF SEARCH (both directions)
+        % ═══════════════════════════════════════════════════════════════
         % Normal biconditional processing
         validate_and_warn(Left, _),
         validate_and_warn(Right, _),
@@ -544,23 +532,14 @@ prove(Left <=> Right) :- !,
         ), nl, nl,
 
         % ═══════════════════════════════════════════════════════════════
-        % NANOCOP VALIDATION (NOUVEAU)
+        % PHASE 3: EXTERNAL VALIDATION (G4MIC FIRST, THEN NANOCOP)
         % ═══════════════════════════════════════════════════════════════
-        write('═══════════════════════════════════════════════════════════════'), nl,
-        write('🔍 nanoCop_decides output'), nl,
-        write('═══════════════════════════════════════════════════════════════'), nl,
-        ( catch(nanoCop_decides(Left <=> Right), _, fail) ->
-            write('true. '), nl,
-            NanoCopResult = valid
-        ;
-            write('false.'), nl,
-            NanoCopResult = invalid
-        ),
+        write('╔══════════════════════════════════════════════════════════════╗'), nl,
+        write('                  🔍 PHASE 3: VALIDATION                         '), nl,
+        write('╚══════════════════════════════════════════════════════════════╝'), nl,
         nl,
 
-        % ═══════════════════════════════════════════════════════════════
-        % G4MIC VALIDATION (NOUVEAU)
-        % ═══════════════════════════════════════════════════════════════
+        % G4MIC VALIDATION (PRIMARY PROVER)
         write('═══════════════════════════════════════════════════════════════'), nl,
         write('🔍 g4mic_decides output'), nl,
         write('═══════════════════════════════════════════════════════════════'), nl,
@@ -573,20 +552,31 @@ prove(Left <=> Right) :- !,
         ),
         nl,
 
-        % ═══════════════════════════════════════════════════════════════
-        % VALIDATION SUMMARY (NOUVEAU)
-        % ═══════════════════════════════════════════════════════════════
+        % NANOCOP VALIDATION (EXTERNAL VALIDATION)
+        write('═══════════════════════════════════════════════════════════════'), nl,
+        write('🔍 nanoCop_decides output'), nl,
+        write('═══════════════════════════════════════════════════════════════'), nl,
+        ( catch(nanoCop_decides(Left <=> Right), _, fail) ->
+            write('true. '), nl,
+            NanoCopResult = valid
+        ;
+            write('false.'), nl,
+            NanoCopResult = invalid
+        ),
+        nl,
+
+        % VALIDATION SUMMARY
         write('═══════════════════════════════════════════════════════════════'), nl,
         write('📊 Validation Summary'), nl,
         write('═══════════════════════════════════════════════════════════════'), nl,
-        ( NanoCopResult = valid, G4micResult = valid ->
+        ( G4micResult = valid, NanoCopResult = valid ->
             write('✅ Both provers agree: '), write('true'), nl
-        ; NanoCopResult = invalid, G4micResult = invalid ->
+        ; G4micResult = invalid, NanoCopResult = invalid ->
             write('✅ Both provers agree: '), write('false'), nl
-        ; NanoCopResult = valid, G4micResult = invalid ->
-            write('⚠️  Disagreement:  nanoCop=true, g4mic=false'), nl
-        ; NanoCopResult = invalid, G4micResult = valid ->
-            write('⚠️  Disagreement: nanoCop=false, g4mic=true'), nl
+        ; G4micResult = valid, NanoCopResult = invalid ->
+            write('⚠️  Disagreement: g4mic=true, nanoCop=false'), nl
+        ; G4micResult = invalid, NanoCopResult = valid ->
+            write('⚠️  Disagreement: g4mic=false, nanoCop=true'), nl
         ),
         nl, nl, !
     ).
@@ -763,11 +753,12 @@ prove([Left] <> [Right]) :- !,
     ), nl, nl, !.
 
 
-% Theorems (original logic)
+% =========================================================================
+% THEOREMS - Unified proof with 3 clear phases
+% =========================================================================
 prove(Formula) :-
-         % VALIDATION: Verify the formula
+    % VALIDATION: Verify the formula
     validate_and_warn(Formula, _ValidatedFormula),
-    % statistics(runtime, [_T0|_]),
     write('═══════════════════════════════════════════════════════════'), nl,
     write('  🎯 G4 PROOF FOR: '), write(Formula), nl,
     write('═══════════════════════════════════════════════════════════'), nl,
@@ -782,23 +773,26 @@ prove(Formula) :-
     subst_neg(F0, F1),
     subst_bicond(F1, F2),
 
+    % ═══════════════════════════════════════════════════════════════
+    % PHASE 1: CONSTRUCTIVE LOGIC (Minimal → Intuitionistic)
+    % ═══════════════════════════════════════════════════════════════
     (   F2 = ((A => #) => #), A \= (_ => #)  ->
         write('┌─────────────────────────────────────────────────────────┐'), nl,
         write('               🔍 DOUBLE NEGATION DETECTED                 '), nl,
         write('             → Trying constructive logic first             '), nl,
         write('└─────────────────────────────────────────────────────────┘'), nl,
         write('┌─────────────────────────────────────────────────────────┐'), nl,
-        write('             🔄 TRYING CONSTRUCTIVE LOGIC                  '), nl,
+        write('          🔄 PHASE 1: CONSTRUCTIVE LOGIC                   '), nl,
         write('└─────────────────────────────────────────────────────────┘'), nl,
         ((provable_at_level([] > [F2], constructive, Proof)) ->
             write('   ✅ Constructive proof found'), nl,
             ((provable_at_level([] > [F2], minimal, _)) ->
-                write('  ✅ Constructive proof found in MINIMAL LOGIC'), nl,
+                write('  ✅ Proof found in MINIMAL LOGIC'), nl,
                 Logic = minimal,
                 OutputProof = Proof
             ;
                 ( proof_uses_lbot(Proof) ->
-                    write('  ✅ Constructive proof found in INTUITIONISTIC LOGIC'), nl,
+                    write('  ✅ Proof found in INTUITIONISTIC LOGIC'), nl,
                     Logic = intuitionistic,
                     OutputProof = Proof
                 )
@@ -806,7 +800,7 @@ prove(Formula) :-
         ;
             write('   ⚠️  Constructive logic failed'), nl,
             write('┌─────────────────────────────────────────────────────────┐'), nl,
-            write('            🎯 FALLBACK: CLASSICAL LOGIC                   '), nl,
+            write('      🎯 PHASE 2: CLASSICAL LOGIC (with antisequent)       '), nl,
             write('└─────────────────────────────────────────────────────────┘'), nl,
             time(provable_at_level([] > [F2], classical, Proof)),
             write('   ✅ Classical proof found'), nl,
@@ -819,7 +813,7 @@ prove(Formula) :-
         write('           → Skipping constructive logic                   '), nl,
         write('└─────────────────────────────────────────────────────────┘'), nl,
         write('┌─────────────────────────────────────────────────────────┐'), nl,
-        write('                🎯 TRYING CLASSICAL LOGIC                  '), nl,
+        write('      🎯 PHASE 2: CLASSICAL LOGIC (with antisequent)       '), nl,
         write('└─────────────────────────────────────────────────────────┘'), nl,
           (provable_at_level([] > [F2], classical, Proof)),
         write('   ✅ Classical proof found'), nl,
@@ -827,7 +821,7 @@ prove(Formula) :-
         OutputProof = Proof
     ;
         write('┌─────────────────────────────────────────────────────────┐'), nl,
-        write('    🔄 PHASE 1: Minimal → Intuitionistic → Classical       '), nl,
+        write('    🔄 PHASE 1: Minimal → Intuitionistic                   '), nl,
         write('└─────────────────────────────────────────────────────────┘'), nl,
         ((provable_at_level([] > [F2], minimal, Proof)) ->
             write('   ✅ Proof found in MINIMAL LOGIC'), nl,
@@ -836,17 +830,19 @@ prove(Formula) :-
         ; (provable_at_level([] > [F2], constructive, Proof)) ->
             write('   ✅ Constructive proof found'), nl,
             ( proof_uses_lbot(Proof) ->
-                write('  -> Uses explosion explosion rule - Proof found in INTUITIONISTIC LOGIC'), nl,
+                write('  → Uses explosion rule - Proof found in INTUITIONISTIC LOGIC'), nl,
                 Logic = intuitionistic,
                 OutputProof = Proof
             ;
-                write('  -> No explosion -> INTUITIONISTIC'), nl,
+                write('  → No explosion → INTUITIONISTIC'), nl,
                 Logic = intuitionistic,
                 OutputProof = Proof
             )
         ;
-            write('   Constructive logic failed'), nl,
-            write('=== TRYING CLASSICAL LOGIC ==='), nl,
+            write('   ⚠️  Constructive logic failed'), nl,
+            write('┌─────────────────────────────────────────────────────────┐'), nl,
+            write('      🎯 PHASE 2: CLASSICAL LOGIC (with antisequent)       '), nl,
+            write('└─────────────────────────────────────────────────────────┘'), nl,
             time(provable_at_level([] > [F2], classical, Proof)),
             % Check if refutation or proof
             (is_antisequent_proof(Proof) ->
@@ -858,21 +854,20 @@ prove(Formula) :-
             OutputProof = Proof
         )
     ),
+
+    % Display proof results
     output_proof_results(OutputProof, Logic, Formula, theorem),
-    % === nanoCop validation ===
+
+    % ═══════════════════════════════════════════════════════════════
+    % PHASE 3: EXTERNAL VALIDATION (G4MIC FIRST, THEN NANOCOP)
+    % ═══════════════════════════════════════════════════════════════
     nl,
-    write('═══════════════════════════════════════════════════════════════'), nl,
-    write('🔍 nanoCop_decides output'), nl,
-    write('═══════════════════════════════════════════════════════════════'), nl,
-    ( catch(nanoCop_decides(Formula), _, fail) ->
-        write('true.'), nl,
-        NanoCopResult = valid
-    ;
-        write('false.'), nl,
-        NanoCopResult = invalid
-    ),
+    write('╔══════════════════════════════════════════════════════════════╗'), nl,
+    write('                  🔍 PHASE 3: VALIDATION                         '), nl,
+    write('╚══════════════════════════════════════════════════════════════╝'), nl,
     nl,
-    % === g4mic_decides validation ===
+
+    % G4MIC VALIDATION (PRIMARY PROVER)
     write('═══════════════════════════════════════════════════════════════'), nl,
     write('🔍 g4mic_decides output'), nl,
     write('═══════════════════════════════════════════════════════════════'), nl,
@@ -884,18 +879,32 @@ prove(Formula) :-
         G4micResult = invalid
     ),
     nl,
-    % === Summary ===
+
+    % NANOCOP VALIDATION (EXTERNAL VALIDATION)
+    write('═══════════════════════════════════════════════════════════════'), nl,
+    write('🔍 nanoCop_decides output'), nl,
+    write('═══════════════════════════════════════════════════════════════'), nl,
+    ( catch(nanoCop_decides(Formula), _, fail) ->
+        write('true.'), nl,
+        NanoCopResult = valid
+    ;
+        write('false.'), nl,
+        NanoCopResult = invalid
+    ),
+    nl,
+
+    % VALIDATION SUMMARY
     write('═══════════════════════════════════════════════════════════════'), nl,
     write('📊 Validation Summary'), nl,
     write('═══════════════════════════════════════════════════════════════'), nl,
-    ( NanoCopResult = valid, G4micResult = valid ->
+    ( G4micResult = valid, NanoCopResult = valid ->
         write('✅ Both provers agree: '), write('true'), nl
-    ; NanoCopResult = invalid, G4micResult = invalid ->
+    ; G4micResult = invalid, NanoCopResult = invalid ->
         write('✅ Both provers agree: '), write('false'), nl
-    ; NanoCopResult = valid, G4micResult = invalid ->
-        write('⚠️  Disagreement: nanoCop=true, g4mic=false'), nl
-    ; NanoCopResult = invalid, G4micResult = valid ->
-        write('⚠️  Disagreement: nanoCop=false, g4mic=true'), nl
+    ; G4micResult = valid, NanoCopResult = invalid ->
+        write('⚠️  Disagreement: g4mic=true, nanoCop=false'), nl
+    ; G4micResult = invalid, NanoCopResult = valid ->
+        write('⚠️  Disagreement: g4mic=false, nanoCop=true'), nl
     ),
     nl, nl.
 
@@ -1067,18 +1076,20 @@ provable_at_level(Sequent, LogicLevel, Proof) :-
     g4mic_proves(Gamma > Delta, [], Threshold, 1, _, LogicLevel, Proof),
     !.
 
-% CLASSICAL LOGIC: Two-pass approach
-% PASS 1: Normal proof search (antisequent disabled)
+% =========================================================================
+% CLASSICAL LOGIC: Two-pass approach (PHASE 2)
+% PASS 1: Normal proof search (antisequent disabled) - all iterations
 % PASS 2: If pass 1 fails, enable antisequent and search for counter-model
+% =========================================================================
 provable_at_level(Sequent, classical, Proof) :-
     Sequent = (Gamma > Delta),
     logic_iteration_limit(classical, MaxIter),
-    (   % PASS 1: Normal proof
+    (   % PASS 1: Normal proof (all iterations)
         (for(Threshold, 0, MaxIter),
          init_eigenvars,
          g4mic_proves(Gamma > Delta, [], Threshold, 1, _, classical, Proof))
     ->  true  % Success - proof found
-    ;   % PASS 2: Antisequent (only if pass 1 failed completely)
+    ;   % PASS 2: Antisequent (only if pass 1 failed completely - all iterations)
         nb_setval(asq_enabled, true),
         once((  % USE ONCE to prevent multiple solutions
             for(Threshold, 0, MaxIter),
@@ -1123,42 +1134,7 @@ proof_uses_lbot(Term) :-
     Term =.. [_|Args],
     member(Arg, Args),
     proof_uses_lbot(Arg).
-/*
-% Check if proof ends with asq (refutation) - ANY branch ending with asq
-proof_is_refutation(Proof) :-
-    proof_ends_with_asq(Proof), !.  % Cut as soon as we find asq
 
-% Base cases: direct asq means refutation
-proof_ends_with_asq(asq(_,_)) :- !.
-proof_ends_with_asq(asq(_,_,_)) :- !.
-
-% Unary rules: follow the single subproof
-proof_ends_with_asq(ip(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-proof_ends_with_asq(rcond(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-proof_ends_with_asq(rall(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-proof_ends_with_asq(rex(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-proof_ends_with_asq(lex(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-proof_ends_with_asq(lall(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-proof_ends_with_asq(land(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-proof_ends_with_asq(l0cond(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-proof_ends_with_asq(landto(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-proof_ends_with_asq(tne(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-proof_ends_with_asq(lorto(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-proof_ends_with_asq(cq_c(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-proof_ends_with_asq(cq_m(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-proof_ends_with_asq(ror(_, Subproof)) :- !, proof_ends_with_asq(Subproof).
-
-% Binary rules: check BOTH branches (OR)
-proof_ends_with_asq(ltoto(_, P1, P2)) :- !, (proof_ends_with_asq(P1) ; proof_ends_with_asq(P2)).
-proof_ends_with_asq(lor(_, P1, P2)) :- !, (proof_ends_with_asq(P1) ; proof_ends_with_asq(P2)).
-proof_ends_with_asq(rand(_, P1, P2)) :- !, (proof_ends_with_asq(P1) ; proof_ends_with_asq(P2)).
-proof_ends_with_asq(lex_lor(_, P1, P2)) :- !, (proof_ends_with_asq(P1) ; proof_ends_with_asq(P2)).
-
-% Base cases that are NOT refutations
-proof_ends_with_asq(ax(_,_)) :- !, fail.
-proof_ends_with_asq(lbot(_,_)) :- !, fail.
-proof_ends_with_asq(_) :- fail.
-*/
 % =========================================================================
 % MINIMAL INTERFACE g4mic_decides/1
 % =========================================================================
