@@ -6,7 +6,7 @@
 :- dynamic formula_level/1.
 
 % =========================================================================
-% DETECTION PRINCIPALE
+% MAIN DETECTION
 % =========================================================================
 
 detect_and_set_logic_level(Formula) :-
@@ -18,17 +18,17 @@ detect_and_set_logic_level(Formula) :-
     ).
 
 % =========================================================================
-% HEURISTIQUES DE DETECTION FOL
+% FOL DETECTION HEURISTICS
 % A formula is FOL if it contains:
-% - Des quantificateurs (?, ?)
+% - Quantifiers (!, ?)
 % - Predicate applications p(t1,...,tn) with n > 0
 % - Equalities between terms
-% - Des fonctions de Skolem
+% - Skolem functions
 % =========================================================================
 
 is_fol_formula(Formula) :-
     (   contains_quantifier(Formula)
-    ;   contains_predicate_application(Formula)  
+    ;   contains_predicate_application(Formula)
     ;   contains_equality(Formula)
     ;   contains_function_symbol(Formula)
     ), !.
@@ -80,6 +80,7 @@ contains_equality(Term) :-
     contains_equality(Arg).
 
 % Fonctions de Skolem
+contains_function_symbol(f_sk(_)) :- !.
 contains_function_symbol(f_sk(_,_)) :- !.
 contains_function_symbol(Term) :-
     compound(Term),
@@ -93,11 +94,11 @@ contains_function_symbol(Term) :-
 
 extract_formula_from_proof(Proof, Formula) :-
     Proof =.. [_RuleName, Sequent|_],
-    ( Sequent = (_ > [Formula]) -> 
+    ( Sequent = (_ > [Formula]) ->
         true
-    ; Sequent = (_ > Goals), Goals = [Formula|_] -> 
+    ; Sequent = (_ > Goals), Goals = [Formula|_] ->
         true
-    ; 
+    ;
         Formula = unknown
     ).
 % =========================================================================
@@ -124,11 +125,6 @@ extract_formula_from_proof(Proof, Formula) :-
 :- dynamic validation_mode/1.
 validation_mode(permissive).
 
-set_validation_mode(Mode) :-
-    member(Mode, [permissive, strict, silent]),
-    retractall(validation_mode(_)),
-    assertz(validation_mode(Mode)).
-
 % =========================================================================
 % KNOWN PREDICATES REGISTRY
 % =========================================================================
@@ -144,10 +140,6 @@ known_predicate(s).
 known_predicate(h).
 known_predicate(m).
 
-register_predicate(P) :-
-    \+ known_predicate(P),
-    assertz(known_predicate(P)).
-
 clear_predicates :-
     retractall(known_predicate(_)).
 
@@ -157,20 +149,20 @@ clear_predicates :-
 
 validate_and_warn(Formula, ValidatedFormula) :-
     validation_mode(Mode),
-    
+
     % Check 1: Sequent syntax confusion (ALWAYS check, even in propositional logic)
     check_sequent_syntax_confusion(Formula, SyntaxWarnings),
-    
+
     % Check 2: Biconditional misuse (only in FOL context)
     detect_fol_context(Formula, IsFOL),
     (   IsFOL ->
         check_bicond_misuse(Formula, BicondWarnings)
     ;   BicondWarnings = []
     ),
-    
+
     % Combine warnings
     append(SyntaxWarnings, BicondWarnings, AllWarnings),
-    
+
     % Handle combined warnings
     handle_warnings(AllWarnings, Mode, ValidatedFormula, Formula).
 
@@ -251,15 +243,18 @@ detect_bicond_in_terms(Term, Warning) :-
 % DEFINITELY A TERM (not a formula)
 % =========================================================================
 % Conservative: only flag obvious cases
+is_definitely_term(![_]:_) :- !, fail.  % Universal quantification = formula
+is_definitely_term(?[_]:_) :- !, fail.  % Existential quantification = formula
 
-is_definitely_term(X) :- 
+is_definitely_term(X) :-
     var(X), !.  % Variable (term)
 
-is_definitely_term(X) :- 
+is_definitely_term(X) :-
     atomic(X),
     \+ known_predicate(X),  % Constant, not predicate
     !.
 
+is_definitely_term(f_sk(_)) :- !.  % Skolem function (single arg)
 is_definitely_term(f_sk(_,_)) :- !.  % Skolem function
 
 is_definitely_term(Term) :-
@@ -284,10 +279,6 @@ known_function(plus).
 known_function(times).
 known_function(father).  % father(x) is a term
 known_function(mother).
-
-register_function(F) :-
-    \+ known_function(F),
-    assertz(known_function(F)).
 
 is_known_function(F) :-
     known_function(F), !.
@@ -344,8 +335,9 @@ is_formula(Term) :-
 
 % Term identification (not a formula)
 % A term is: constant, variable, or function application
-is_term_not_formula(X) :- 
+is_term_not_formula(X) :-
     atomic(X), !.  % Constant or variable
+is_term_not_formula(f_sk(_)) :- !.  % Skolem function (single arg)
 is_term_not_formula(f_sk(_,_)) :- !.  % Skolem function
 is_term_not_formula(Term) :-
     compound(Term),
@@ -405,22 +397,4 @@ print_warning(warning(formula_turnstile, Msg)) :-
 % =========================================================================
 % UTILITY: AUTO-SUGGESTION (optional feature)
 % =========================================================================
-% Suggests automatic correction of <=> to = in term contexts
-
-suggest_auto_correction(Formula, CorrectedFormula) :-
-    replace_bicond_with_eq(Formula, CorrectedFormula).
-
-replace_bicond_with_eq(A <=> B, A1 = B1) :-
-    is_term_not_formula(A),
-    is_term_not_formula(B),
-    !,
-    replace_bicond_with_eq(A, A1),
-    replace_bicond_with_eq(B, B1).
-replace_bicond_with_eq(Term, Result) :-
-    compound(Term),
-    Term =.. [F|Args],
-    maplist(replace_bicond_with_eq, Args, NewArgs),
-    Result =.. [F|NewArgs], !.
-replace_bicond_with_eq(Term, Term).
-
 %%% END OF G4MIC PROVER

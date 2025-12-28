@@ -1,4 +1,4 @@
-%========================================================================  
+%========================================================================
 % COMMON ND PRINTING
 %========================================================================
 % =========================================================================
@@ -37,9 +37,9 @@ make_acyclic_args([A|As], MapIn, MapOut, [SA|SAs]) :-
 find_pair(Term, [pair(Orig,Val)|_], Val) :- Orig == Term, !.
 find_pair(Term, [_|Rest], Val) :- find_pair(Term, Rest, Val).
 
-replace_pair(Term, OldVal, NewVal, [pair(Orig,OldVal)|Rest], [pair(Orig,NewVal)|Rest]) :- 
+replace_pair(Term, OldVal, NewVal, [pair(Orig,OldVal)|Rest], [pair(Orig,NewVal)|Rest]) :-
     Orig == Term, !.
-replace_pair(Term, OldVal, NewVal, [H|T], [H|T2]) :- 
+replace_pair(Term, OldVal, NewVal, [H|T], [H|T2]) :-
     replace_pair(Term, OldVal, NewVal, T, T2).
 replace_pair(_, _, _, [], []).
 
@@ -48,19 +48,19 @@ replace_pair(_, _, _, [], []).
 % =========================================================================
 
 % Helper: Remove ALL annotations (not just quantifiers)
-strip_annotations_deep(@(Term, _), Stripped) :- 
+strip_annotations_deep(@(Term, _), Stripped) :-
     !, strip_annotations_deep(Term, Stripped).
-strip_annotations_deep(![_-X]:Body, ![X]:StrippedBody) :- 
+strip_annotations_deep(![_-X]:Body, ![X]:StrippedBody) :-
     !, strip_annotations_deep(Body, StrippedBody).
-strip_annotations_deep(?[_-X]:Body, ?[X]:StrippedBody) :- 
+strip_annotations_deep(?[_-X]:Body, ?[X]:StrippedBody) :-
     !, strip_annotations_deep(Body, StrippedBody).
-strip_annotations_deep(A & B, SA & SB) :- 
+strip_annotations_deep(A & B, SA & SB) :-
     !, strip_annotations_deep(A, SA), strip_annotations_deep(B, SB).
-strip_annotations_deep(A | B, SA | SB) :- 
+strip_annotations_deep(A | B, SA | SB) :-
     !, strip_annotations_deep(A, SA), strip_annotations_deep(B, SB).
-strip_annotations_deep(A => B, SA => SB) :- 
+strip_annotations_deep(A => B, SA => SB) :-
     !, strip_annotations_deep(A, SA), strip_annotations_deep(B, SB).
-strip_annotations_deep(A <=> B, SA <=> SB) :- 
+strip_annotations_deep(A <=> B, SA <=> SB) :-
     !, strip_annotations_deep(A, SA), strip_annotations_deep(B, SB).
 strip_annotations_deep(Term, Term).
 
@@ -119,15 +119,15 @@ extract_new_formula(CurrentPremisses, SubProof, _) :-
 find_context_line(Formula, Context, LineNumber) :-
     premiss_list(PremList),
     length(PremList, NumPremises),
-    % Chercher UNIQUEMENT dans les N premières lignes
+    % Search ONLY in the first N lines
     member(LineNumber:ContextFormula, Context),
     LineNumber =< NumPremises,
-    % Matcher avec les différentes variantes possibles
+    % Match with different possible variants
     ( ContextFormula = Formula
     ; strip_annotations_match(Formula, ContextFormula)
     ; formulas_equivalent(Formula, ContextFormula)
     ),
-    !.  % Couper dès qu'on trouve dans les prémisses
+    !.  % Stop as soon as found in premisses
 
 % =========================================================================
 % PRIORITY -1: QUANTIFIER NEGATION (original ~ form)
@@ -269,7 +269,17 @@ find_context_line(Formula, Context, LineNumber) :-
 % FALLBACK: WARNING if no match found
 % -------------------------------------------------------------------------
 
+% Silent fallback for formulas with asq (antisequent eigenvariables) - expected to not match
 find_context_line(Formula, _Context, 0) :-
+    sub_term(asq(_,_), Formula),
+    !.
+
+find_context_line(Formula, _Context, 0) :-
+    % DEBUG: Show what we're looking for and what's in context
+    % format('% DEBUG find_context_line FAILED:~n', []),
+    % format('%   Searching for: ~w~n', [Formula]),
+    % format('%   Context formulas:~n', []),
+    % forall(member(L:F, Context), format('%     Line ~w: ~w~n', [L, F])),
     format('% WARNING: Formula ~w not found in context~n', [Formula]).
 
 % =========================================================================
@@ -284,7 +294,7 @@ strip_annotations_match(?[X]:Body, ?[_-X]:Body) :- !.
 strip_annotations_match(A, B) :- A = B.
 
 % Biconditional: match structure without considering order
-formulas_equivalent((A1 => B1) & (B2 => A2), C <=> D) :- 
+formulas_equivalent((A1 => B1) & (B2 => A2), C <=> D) :-
     !,
     (
         (formulas_equivalent(A1, C), formulas_equivalent(A2, C),
@@ -294,7 +304,7 @@ formulas_equivalent((A1 => B1) & (B2 => A2), C <=> D) :-
          formulas_equivalent(B1, C), formulas_equivalent(B2, C))
     ).
 
-formulas_equivalent(A <=> B, (C => D) & (D2 => C2)) :- 
+formulas_equivalent(A <=> B, (C => D) & (D2 => C2)) :-
     !,
     (
         (formulas_equivalent(A, C), formulas_equivalent(A, C2),
@@ -304,7 +314,7 @@ formulas_equivalent(A <=> B, (C => D) & (D2 => C2)) :-
          formulas_equivalent(B, C), formulas_equivalent(B, C2))
     ).
 
-formulas_equivalent((A <=> B), (C <=> D)) :- 
+formulas_equivalent((A <=> B), (C <=> D)) :-
     !,
     (
         (formulas_equivalent(A, C), formulas_equivalent(B, D))
@@ -317,30 +327,30 @@ formulas_equivalent(A => #, ~ B) :- !, formulas_equivalent(A, B).
 formulas_equivalent(~ A, B => #) :- !, formulas_equivalent(A, B).
 
 % Quantifiers: compare bodies only (ignore variable)
-formulas_equivalent(![_]:Body1, ![_]:Body2) :- 
+formulas_equivalent(![_]:Body1, ![_]:Body2) :-
     !, formulas_equivalent(Body1, Body2).
-formulas_equivalent(![_-_]:Body1, ![_]:Body2) :- 
+formulas_equivalent(![_-_]:Body1, ![_]:Body2) :-
     !, formulas_equivalent(Body1, Body2).
-formulas_equivalent(![_]:Body1, ![_-_]:Body2) :- 
+formulas_equivalent(![_]:Body1, ![_-_]:Body2) :-
     !, formulas_equivalent(Body1, Body2).
-formulas_equivalent(![_-_]:Body1, ![_-_]:Body2) :- 
+formulas_equivalent(![_-_]:Body1, ![_-_]:Body2) :-
     !, formulas_equivalent(Body1, Body2).
 
-formulas_equivalent(?[_]:Body1, ?[_]:Body2) :- 
+formulas_equivalent(?[_]:Body1, ?[_]:Body2) :-
     !, formulas_equivalent(Body1, Body2).
-formulas_equivalent(?[_-_]:Body1, ?[_]:Body2) :- 
+formulas_equivalent(?[_-_]:Body1, ?[_]:Body2) :-
     !, formulas_equivalent(Body1, Body2).
-formulas_equivalent(?[_]:Body1, ?[_-_]:Body2) :- 
+formulas_equivalent(?[_]:Body1, ?[_-_]:Body2) :-
     !, formulas_equivalent(Body1, Body2).
-formulas_equivalent(?[_-_]:Body1, ?[_-_]:Body2) :- 
+formulas_equivalent(?[_-_]:Body1, ?[_-_]:Body2) :-
     !, formulas_equivalent(Body1, Body2).
 
 % Binary connectives
-formulas_equivalent(A & B, C & D) :- 
+formulas_equivalent(A & B, C & D) :-
     !, formulas_equivalent(A, C), formulas_equivalent(B, D).
-formulas_equivalent(A | B, C | D) :- 
+formulas_equivalent(A | B, C | D) :-
     !, formulas_equivalent(A, C), formulas_equivalent(B, D).
-formulas_equivalent(A => B, C => D) :- 
+formulas_equivalent(A => B, C => D) :-
     !, formulas_equivalent(A, C), formulas_equivalent(B, D).
 
 % Bottom
@@ -360,20 +370,20 @@ formulas_equivalent(Term1, Term2) :-
 formulas_equivalent(A, B) :- A == B, !.
 
 % Fallback: atomic terms with same name
-formulas_equivalent(A, B) :- 
+formulas_equivalent(A, B) :-
     atomic(A), atomic(B),
     !.
 
 % Helper: match two formulas by structure (modulo variable renaming)
 
 % Negations
-match_formula_structure(A => #, B => #) :- 
+match_formula_structure(A => #, B => #) :-
     !, match_formula_structure(A, B).
-match_formula_structure(~A, B => #) :- 
+match_formula_structure(~A, B => #) :-
     !, match_formula_structure(A, B).
-match_formula_structure(A => #, ~ B) :- 
+match_formula_structure(A => #, ~ B) :-
     !, match_formula_structure(A, B).
-match_formula_structure(~ A, ~ B) :- 
+match_formula_structure(~ A, ~ B) :-
     !, match_formula_structure(A, B).
 
 % Quantifiers
@@ -415,8 +425,8 @@ find_disj_context(L, R, Context, Line) :-
 extract_witness(SubProof, Witness) :-
     SubProof =.. [Rule|Args],
     Args = [(Prem > _)|_],
-    ( member(Witness, Prem), contains_skolem(Witness), 
-      ( Rule = rall ; Rule = lall ; \+ is_quantified(Witness) ) 
+    ( member(Witness, Prem), contains_skolem(Witness),
+      ( Rule = rall ; Rule = lall ; \+ is_quantified(Witness) )
     ), !.
 extract_witness(SubProof, Witness) :-
     SubProof =.. [_, (_ > _), SubSP|_],
@@ -428,7 +438,7 @@ is_quantified(?[_-_]:_) :- !.
 contains_skolem(Formula) :-
     Formula =.. [_|Args],
     member(Arg, Args),
-    (Arg = f_sk(_,_) ; compound(Arg), contains_skolem(Arg)).
+    (Arg = f_sk(_) ; Arg = f_sk(_,_) ; compound(Arg), contains_skolem(Arg)).
 
 is_direct_conjunct(G, (A & B)) :- (G = A ; G = B), !.
 is_direct_conjunct(G, (A & R)) :- (G = A ; is_direct_conjunct(G, R)).

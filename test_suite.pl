@@ -54,6 +54,14 @@ run_all_test_files :-
     writeln('##############################################'),
     writeln('#    END OF THE COMPLETE SERIES OF TESTS     #'),
     writeln('##############################################'),
+    writeln('TOTAL: 134 formulas tested'),
+    writeln('  • 107 numbered tests'),
+    writeln('  • 27 Pelletier problems'),
+    writeln(''),
+    writeln('To check disagreements between g4mic and nanoCop:'),
+    writeln('  Press Ctrl+F (or Cmd+F on Mac) and search for "Disagreement"'),
+    writeln('  Browser shows "0 found" → 100% agreement!'),
+    writeln(''),
     format_execution_time(ElapsedTime),
     writeln('').
 
@@ -79,22 +87,22 @@ safe_run(Goal, Name) :-
     ).
 
 %! format_execution_time(+Seconds)
-%  Affiche le temps d'execution dans un format lisible
+%  Display execution time in readable format
 format_execution_time(Seconds) :-
     Seconds < 60,
     !,
-    format('Temps total d\'execution : ~2f secondes~n', [Seconds]).
+    format('Total execution time: ~2f seconds~n', [Seconds]).
 format_execution_time(Seconds) :-
     Seconds < 3600,
     !,
     Minutes is floor(Seconds / 60),
     RemainingSeconds is Seconds - (Minutes * 60),
-    format('Temps total d\'execution : ~d min ~2f sec~n', [Minutes, RemainingSeconds]).
+    format('Total execution time: ~d min ~2f sec~n', [Minutes, RemainingSeconds]).
 format_execution_time(Seconds) :-
     Hours is floor(Seconds / 3600),
     RemainingMinutes is floor((Seconds - (Hours * 3600)) / 60),
     RemainingSeconds is Seconds - (Hours * 3600) - (RemainingMinutes * 60),
-    format('Temps total d\'execution : ~d h ~d min ~2f sec~n', [Hours, RemainingMinutes, RemainingSeconds]).
+    format('Total execution time: ~d h ~d min ~2f sec~n', [Hours, RemainingMinutes, RemainingSeconds]).
 
 % =========================================================================
 % EXAMPLES FOR TESTING
@@ -241,7 +249,7 @@ run_pelletier_list([Name-Formula|Rest], N, PAcc, FAcc, SAcc, Tot) :-
     ;
         pelletier_timeout(TOSeconds),
         catch(
-            ( safe_time_out((decide(Formula) -> Status = proved ; Status = not_proved), TOSeconds, Result),
+            ( safe_time_out((prove(Formula) -> Status = proved ; Status = not_proved), TOSeconds, Result),
               interpret_safe_result(Result, Status, Outcome)
             ),
             E,
@@ -279,7 +287,7 @@ run_pelletier_named(Name) :-
             pelletier_timeout(TOSeconds),
             format('Running test ~w with timeout ~w seconds...~n', [Name, TOSeconds]),
             catch(
-                ( safe_time_out((decide(Formula) -> writeln('PROVED') ; writeln('NOT PROVED')), TOSeconds, Res),
+                ( safe_time_out((prove(Formula) -> writeln('PROVED') ; writeln('NOT PROVED')), TOSeconds, Res),
                   ( Res == time_out -> writeln('TIMEOUT') ; true )
                 ),
                 E, format('ERROR: ~w~n', [E])

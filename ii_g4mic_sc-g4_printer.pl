@@ -1,6 +1,6 @@
 % =========================================================================
 % G4 PRINTER SPECIALIZED FOR BUSSPROOFS
-% Optimized LaTeX rendering for authentic G4 rules
+% Optimized LaTeX rendering for  G4 rules
 % =========================================================================
 
 % =========================================================================
@@ -17,7 +17,7 @@ render_bussproofs(asq(Seq, _), VarCounter, FinalCounter) :-
     write('}$}'), nl.
 
 % =========================================================================
-% G4 rules 
+% G4 rules
 % =========================================================================
 
 % 1. Ax.
@@ -224,7 +224,7 @@ render_bussproofs(eq_refl(Seq), VarCounter, FinalCounter) :-
     write('\\RightLabel{\\scriptsize{$ = I $}}'), nl,
     write('\\UnaryInfC{$'),
     write(' \\vdash '),
-    ( Seq = [Goal] -> 
+    ( Seq = [Goal] ->
         rewrite(Goal, VarCounter, FinalCounter, GoalLatex),
         write(GoalLatex)
     ;
@@ -302,8 +302,9 @@ render_bussproofs(equiv_subst(Seq), VarCounter, FinalCounter) :-
 % Filter and render sequent
 render_sequent(Gamma > Delta, VarCounter, FinalCounter) :-
     % ALWAYS use Gamma from sequent, NOT premiss_list!
-    filter_top_from_gamma(Gamma, FilteredGamma),
-    
+    filter_top_from_gamma(Gamma, FilteredGamma0),
+    filter_empty_lists(FilteredGamma0, FilteredGamma),
+
     ( FilteredGamma = [] ->
         % Theorem: no premisses to display
         write(' \\vdash '),
@@ -313,17 +314,20 @@ render_sequent(Gamma > Delta, VarCounter, FinalCounter) :-
         render_formula_list(FilteredGamma, VarCounter, TempCounter),
         write(' \\vdash ')
     ),
-    ( Delta = [] ->
+
+    filter_empty_lists(Delta, FilteredDelta),
+    ( FilteredDelta = [] ->
         write('\\bot'),
         FinalCounter = TempCounter
     ;
-        render_formula_list(Delta, TempCounter, FinalCounter)
+        render_formula_list(FilteredDelta, TempCounter, FinalCounter)
     ).
 
 % Render antisequent with \nvdash (for refutations)
 render_antisequent(Gamma < Delta, VarCounter, FinalCounter) :-
-    filter_top_from_gamma(Gamma, FilteredGamma),
-    
+    filter_top_from_gamma(Gamma, FilteredGamma0),
+    filter_empty_lists(FilteredGamma0, FilteredGamma),
+
     ( FilteredGamma = [] ->
         write(' \\nvdash '),
         TempCounter = VarCounter
@@ -331,12 +335,19 @@ render_antisequent(Gamma < Delta, VarCounter, FinalCounter) :-
         render_formula_list(FilteredGamma, VarCounter, TempCounter),
         write(' \\nvdash ')
     ),
-    ( Delta = [] ->
+
+    filter_empty_lists(Delta, FilteredDelta),
+    ( FilteredDelta = [] ->
         write('\\bot'),
         FinalCounter = TempCounter
     ;
-        render_formula_list(Delta, TempCounter, FinalCounter)
+        render_formula_list(FilteredDelta, TempCounter, FinalCounter)
     ).
+
+% filter_empty_lists/2: Remove empty list [] elements
+filter_empty_lists([], []).
+filter_empty_lists([[]|T], Filtered) :- !, filter_empty_lists(T, Filtered).
+filter_empty_lists([H|T], [H|RestFiltered]) :- filter_empty_lists(T, RestFiltered).
 
 % filter_top_from_gamma/2: Remove top (⊤) from premisses list
 filter_top_from_gamma([], []).
@@ -378,20 +389,12 @@ render_formula_list([F|Rest], VarCounter, FinalCounter) :-
 % INTEGRATION WITH MAIN SYSTEM
 % =========================================================================
 
-% Interface compatible with decide/1
-render_g4_bussproofs_from_decide(Proof) :-
-    render_g4_proof(Proof).
-
-% Interface compatible with prove_formula_clean/3
-render_g4_bussproofs_from_clean(Proof) :-
-    render_g4_proof(Proof).
-
 % =========================================================================
 % COMMENTS AND DOCUMENTATION
 % =========================================================================
 
 % This G4 printer is specially optimized for:
-% 
+%
 % 1. AUTHENTIC G4 RULES:
 %    - L0-> (modus ponens G4 signature)
 %    - L-and->, L-or-> (curried transformations)

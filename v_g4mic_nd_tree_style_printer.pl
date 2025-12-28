@@ -1,8 +1,8 @@
 % =========================================================================
-% NATURAL DEDUCTION PRINTER IN TREE STYLE  
+% NATURAL DEDUCTION PRINTER IN TREE STYLE
 % =========================================================================
 % =========================================================================
-% DISPLAY PREMISS LIST FOR TREE STYLE 
+% DISPLAY PREMISS LIST FOR TREE STYLE
 % =========================================================================
 % render_premiss_list_silent/5: Silent version for tree style
 render_premiss_list_silent([], _, Line, Line, []) :- !.
@@ -61,8 +61,8 @@ render_nd_tree_proof(Proof) :-
 % =========================================================================
 
 collect_and_render_tree(RootLineNum) :-
-    findall(N-Formula-Just-Scope, 
-            (fitch_line(N, Formula, Just, Scope), \+ abbreviated_line(N)), 
+    findall(N-Formula-Just-Scope,
+            (fitch_line(N, Formula, Just, Scope), \+ abbreviated_line(N)),
             Lines),
     predsort(compare_lines, Lines, SortedLines),
     ( SortedLines = [] ->
@@ -72,7 +72,7 @@ collect_and_render_tree(RootLineNum) :-
         findall(F, fitch_line(_, F, premiss, _), AllPremisses),
 
         ( build_buss_tree(RootLineNum, SortedLines, Tree) ->
-            
+
             % Check if the conclusion is simple (premiss/reiteration) AND there are multiple premisses
             % FIX: Check RootLineNum for justification, not just any line.
             ( is_simple_conclusion(RootLineNum, AllPremisses) ->
@@ -81,7 +81,7 @@ collect_and_render_tree(RootLineNum) :-
             ;
                 FinalTree = Tree
             ),
-            
+
             write('\\begin{prooftree}'), nl,
             render_buss_tree(FinalTree),
             write('\\end{prooftree}'), nl
@@ -108,7 +108,7 @@ wrap_premisses_in_tree(RootLineNum, AllPremisses, FinalTree) :-
     findall(premiss_node(F), member(F, AllPremisses), PremissTrees),
     % Get the conclusion formula
     fitch_line(RootLineNum, FinalFormula, _, _),
-    
+
     % Create the forced node
     FinalTree = n_ary_premiss_node(FinalFormula, PremissTrees).
 
@@ -124,6 +124,25 @@ build_buss_tree(LineNum, FitchLines, Tree) :-
         fail
     ).
 
+% =========================================================================
+% HELPER FOR TREE CONSTRUCTION
+% =========================================================================
+% Helper: Find available line if LineNum doesn't exist
+find_closest_before(LineNum, FitchLines, ClosestLine) :-
+    ( member(LineNum-_-_-_, FitchLines) ->
+        ClosestLine = LineNum
+    ;
+        findall(N, (member(N-_-_-_, FitchLines), N < LineNum), BeforeLines),
+        ( BeforeLines \= [] ->
+            max_list(BeforeLines, ClosestLine)
+        ;
+            ClosestLine = LineNum  % Fallback
+        )
+    ).
+
+% =========================================================================
+% BUILD TREE FROM JUSTIFICATION
+% =========================================================================
 % -- Reiteration (Rule moved for priority, fixes P, Q |- P) --
 build_tree_from_just(reiteration(SourceLine), _LineNum, Formula, FitchLines, reiteration_node(Formula, SubTree)) :-
     !,
@@ -136,9 +155,12 @@ build_tree_from_just(axiom, _LineNum, Formula, _FitchLines, reiteration_node(For
 build_tree_from_just(premiss, _LineNum, Formula, _FitchLines, premiss_node(Formula)) :- !.
 
 % -- Implication Rules --
-% R->
+
+% R-> (Implication Introduction)
 build_tree_from_just(rcond(HypNum, GoalNum), _LineNum, Formula, FitchLines, discharged_node(rcond, HypNum, Formula, SubTree)) :-
-    !, build_buss_tree(GoalNum, FitchLines, SubTree).
+    !,
+    find_closest_before(GoalNum, FitchLines, ActualGoalNum),
+    build_buss_tree(ActualGoalNum, FitchLines, SubTree).
 
 % L0-> (Modus Ponens)
 build_tree_from_just(l0cond(MajLine, MinLine), _LineNum, Formula, FitchLines, binary_node(l0cond, Formula, TreeA, TreeB)) :-
@@ -156,7 +178,8 @@ build_tree_from_just(ror(SubLine), _LineNum, Formula, FitchLines, unary_node(ror
 % L∨ (Elim Or) - Ternary
 build_tree_from_just(lor(DisjLine, HypA, HypB, GoalA, GoalB), _LineNum, Formula, FitchLines,
                      ternary_node(lor, HypA, HypB, Formula, DisjTree, TreeA, TreeB)) :-
-    !, build_buss_tree(DisjLine, FitchLines, DisjTree),
+    !,
+    build_buss_tree(DisjLine, FitchLines, DisjTree),
     build_buss_tree(GoalA, FitchLines, TreeA),
     build_buss_tree(GoalB, FitchLines, TreeB).
 
@@ -198,10 +221,11 @@ build_tree_from_just(ip(HypNum, BotNum), _LineNum, Formula, FitchLines, discharg
 
 % -- Quantifier Rules --
 % L∃ (Exist Elim)
-build_tree_from_just(lex(ExistLine, WitNum, GoalNum), _LineNum, Formula, FitchLines, 
+build_tree_from_just(lex(ExistLine, WitNum, GoalNum), _LineNum, Formula, FitchLines,
                      discharged_node(lex, WitNum, Formula, ExistTree, GoalTree)) :-
     !,
-    build_buss_tree(ExistLine, FitchLines, ExistTree), build_buss_tree(GoalNum, FitchLines, GoalTree).
+    build_buss_tree(ExistLine, FitchLines, ExistTree),
+    build_buss_tree(GoalNum, FitchLines, GoalTree).
 
 % R∃ (Exist Intro)
 build_tree_from_just(rex(WitLine), _LineNum, Formula, FitchLines, unary_node(rex, Formula, SubTree)) :-
@@ -225,11 +249,11 @@ build_tree_from_just(cq_m(Line), _LineNum, Formula, FitchLines, unary_node(cq_m,
 % -- Equality Rules --
 build_tree_from_just(eq_refl, _LineNum, Formula, _FitchLines, axiom_node(Formula)) :- !.
 
-build_tree_from_just(eq_sym(SourceLine), _LineNum, Formula, FitchLines, 
+build_tree_from_just(eq_sym(SourceLine), _LineNum, Formula, FitchLines,
                      unary_node(eq_sym, Formula, SubTree)) :-
     !, build_buss_tree(SourceLine, FitchLines, SubTree).
 
-build_tree_from_just(eq_trans(Line1, Line2), _LineNum, Formula, FitchLines, 
+build_tree_from_just(eq_trans(Line1, Line2), _LineNum, Formula, FitchLines,
                      binary_node(eq_trans, Formula, Tree1, Tree2)) :-
     !, build_buss_tree(Line1, FitchLines, Tree1), build_buss_tree(Line2, FitchLines, Tree2).
 
@@ -237,7 +261,7 @@ build_tree_from_just(eq_subst(Line1, Line2), _LineNum, Formula, FitchLines,
                      binary_node(eq_subst, Formula, Tree1, Tree2)) :-
     !, build_buss_tree(Line1, FitchLines, Tree1), build_buss_tree(Line2, FitchLines, Tree2).
 
-build_tree_from_just(eq_cong(SourceLine), _LineNum, Formula, FitchLines, 
+build_tree_from_just(eq_cong(SourceLine), _LineNum, Formula, FitchLines,
                      unary_node(eq_cong, Formula, SubTree)) :-
     !, build_buss_tree(SourceLine, FitchLines, SubTree).
 
@@ -245,7 +269,7 @@ build_tree_from_just(eq_subst_eq(Line1, Line2), _LineNum, Formula, FitchLines,
                      binary_node(eq_subst_eq, Formula, Tree1, Tree2)) :-
     !, build_buss_tree(Line1, FitchLines, Tree1), build_buss_tree(Line2, FitchLines, Tree2).
 
-build_tree_from_just(eq_trans_chain, _LineNum, Formula, _FitchLines, 
+build_tree_from_just(eq_trans_chain, _LineNum, Formula, _FitchLines,
                      axiom_node(Formula)) :- !.
 
 % DS: Disjunctive Syllogism (binary rule)
@@ -289,10 +313,10 @@ render_buss_tree(reiteration_node(F, SubTree)) :-
 render_buss_tree(n_ary_premiss_node(F, Trees)) :-
     % 1. Render all subtrees (premisses)
     maplist(render_buss_tree, Trees),
-    
+
     % 2. Add Wk (Weakening) label
     write('\\RightLabel{\\scriptsize{$ R $}}'), nl,
-    
+
     % 3. Use BinaryInfC if N=2 (P and Q)
     length(Trees, N),
     ( N = 2 ->
@@ -330,9 +354,9 @@ render_buss_tree(ternary_node(Rule, HypA, HypB, F, TreeA, TreeB, TreeC)) :-
     render_buss_tree(TreeB),
     render_buss_tree(TreeC),
     format_rule_label(Rule, Label),
-    ( Rule = lor -> 
+    ( Rule = lor ->
         format('\\RightLabel{\\scriptsize{~w} ~w,~w}~n', [Label, HypA, HypB])
-    ; 
+    ;
         format('\\RightLabel{\\scriptsize{~w}}~n', [Label])
     ),
     write('\\TrinaryInfC{$'), render_formula_for_buss(F), write('$}'), nl.
@@ -421,40 +445,40 @@ all_premisses_used(Tree, [P|Ps]) :-
     all_premisses_used(Tree, Ps).
 
 % Helper: strip variable annotations
-strip_annotations(![_-X]:Body, ![X]:StrippedBody) :- 
+strip_annotations(![_-X]:Body, ![X]:StrippedBody) :-
     !, strip_annotations(Body, StrippedBody).
-strip_annotations(?[_-X]:Body, ?[X]:StrippedBody) :- 
+strip_annotations(?[_-X]:Body, ?[X]:StrippedBody) :-
     !, strip_annotations(Body, StrippedBody).
-strip_annotations(A & B, SA & SB) :- 
+strip_annotations(A & B, SA & SB) :-
     !, strip_annotations(A, SA), strip_annotations(B, SB).
-strip_annotations(A | B, SA | SB) :- 
+strip_annotations(A | B, SA | SB) :-
     !, strip_annotations(A, SA), strip_annotations(B, SB).
-strip_annotations(A => B, SA => SB) :- 
+strip_annotations(A => B, SA => SB) :-
     !, strip_annotations(A, SA), strip_annotations(B, SB).
-strip_annotations(A <=> B, SA <=> SB) :- 
+strip_annotations(A <=> B, SA <=> SB) :-
     !, strip_annotations(A, SA), strip_annotations(B, SB).
 strip_annotations(F, F).
 
 % Match with annotation normalization
-tree_contains_formula(premiss_node(F), P) :- 
+tree_contains_formula(premiss_node(F), P) :-
     !,
     strip_annotations(F, F_stripped),
     strip_annotations(P, P_stripped),
     (F_stripped == P_stripped ; subsumes_term(F_stripped, P_stripped) ; subsumes_term(P_stripped, F_stripped)).
 
-tree_contains_formula(axiom_node(F), P) :- 
+tree_contains_formula(axiom_node(F), P) :-
     !,
     strip_annotations(F, F_stripped),
     strip_annotations(P, P_stripped),
     (F_stripped == P_stripped ; subsumes_term(F_stripped, P_stripped) ; subsumes_term(P_stripped, F_stripped)).
 
-tree_contains_formula(hypothesis(_, F), P) :- 
+tree_contains_formula(hypothesis(_, F), P) :-
     !,
     strip_annotations(F, F_stripped),
     strip_annotations(P, P_stripped),
     (F_stripped == P_stripped ; subsumes_term(F_stripped, P_stripped) ; subsumes_term(P_stripped, F_stripped)).
 
-tree_contains_formula(unary_node(_, _, SubTree), F) :- 
+tree_contains_formula(unary_node(_, _, SubTree), F) :-
     tree_contains_formula(SubTree, F).
 tree_contains_formula(binary_node(_, _, TreeA, TreeB), F) :-
     (tree_contains_formula(TreeA, F) ; tree_contains_formula(TreeB, F)).
@@ -484,8 +508,8 @@ tree_contains_assumption(binary_node(_, _, TreeA, TreeB), HypNum) :-
     !, (tree_contains_assumption(TreeA, HypNum) ; tree_contains_assumption(TreeB, HypNum)).
 
 tree_contains_assumption(ternary_node(_, _, _, _, TreeA, TreeB, TreeC), HypNum) :-
-    !, (tree_contains_assumption(TreeA, HypNum) ; 
-        tree_contains_assumption(TreeB, HypNum) ; 
+    !, (tree_contains_assumption(TreeA, HypNum) ;
+        tree_contains_assumption(TreeB, HypNum) ;
         tree_contains_assumption(TreeC, HypNum)).
 
 tree_contains_assumption(discharged_node(_, _, _, SubTree), HypNum) :-
@@ -503,5 +527,5 @@ tree_contains_assumption(premiss_node(_), _) :- !, fail.
 tree_contains_assumption(unknown_node(_, _, _), _) :- !, fail.
 
 % =========================================================================
-%   END OF ND TREE STYLE PRINTER 
+%   END OF ND TREE STYLE PRINTER
 % =========================================================================

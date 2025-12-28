@@ -25,7 +25,7 @@ render_hypo(Scope, Formula, Label, _CurLine, _NextLine, VarIn, VarOut) :-
 
 render_fitch_indent(0) :- !.
 
-render_fitch_indent(N) :- 
+render_fitch_indent(N) :-
     N > 0,
     write('\\fa '),
     N1 is N - 1,
@@ -40,7 +40,7 @@ render_have(Scope, Formula, Just, _CurLine, _NextLine, VarIn, VarOut) :-
     write(' &  '),
     write(Just),
     write('\\\\'), nl.
- 
+
 % =========================================================================
 % SIMPLE RULE: (Antecedent) => (Consequent) except for atoms
 % =========================================================================
@@ -307,7 +307,13 @@ rewrite(#, J, J, '\\bot') :- !.
 rewrite(# => #, J, J, '\\top') :- !.
 
 % NEW CLAUSE TO HANDLE SKOLEM CONSTANTS
-% Converts f_sk(K,_) to a simple name like 'a', 'b', etc.
+% Converts f_sk(K) to a simple name like 'a', 'b', etc. (single argument version)
+rewrite(f_sk(K), J, J, Name) :-
+    integer(K),
+    !,
+    rewrite_name(K, Name).
+
+% Converts f_sk(K,_) to a simple name like 'a', 'b', etc. (two arguments version)
 rewrite(f_sk(K,_), J, J, Name) :-
     !,
     rewrite_name(K, Name).
@@ -321,9 +327,9 @@ rewrite(A, J, J, A_latex) :-
 % Recognizes ((A => B) & (B => A)) (or reverse order) as A <=> B for LaTeX display
 % Must be placed BEFORE the generic rewrite((A & B), ...) clause
 rewrite((X & Y), J, K, (C ' \\leftrightarrow ' D)) :-
-    % cas 1 : X = (A => B), Y = (B => A)
+    % case 1: X = (A => B), Y = (B => A)
     ( X = (A => B), Y = (B => A)
-    % cas 2 : ordre inverse
+    % case 2: reverse order
     ; X = (B => A), Y = (A => B)
     ),
     !,
@@ -342,7 +348,7 @@ rewrite((A | B), J, K, (C ' \\lor ' D)) :-
     rewrite(A, J, H, C),
     rewrite(B, H, K, D).
 
-% AFFICHAGE COSMETIQUE : A => # devient !A
+% COSMETIC DISPLAY: A => # becomes ~A
 rewrite((A => #), J, K, (' \\lnot ' C)) :-
     !,
     rewrite(A, J, K, C).
@@ -378,7 +384,7 @@ rewrite((?[X-asq(A,B)]:Body), J, K, (' \\exists ' X ' ' C)) :-
     replace_specific_asq(asq(A,B), X, Body, CleanBody),
     rewrite(CleanBody, J, K, C).
 
-% QUANTIFICATEURS : Version Burse pour format X-Y
+% QUANTIFIERS: X-Y format
 rewrite((![X-X]:A), J, K, (' \\forall ' X ' ' C)) :-
     !,
     rewrite(A, J, K, C).
@@ -389,13 +395,13 @@ rewrite((?[X-X]:A), J, K, (' \\exists ' X ' ' C)) :-
 
 rewrite((![X]:A), J, K, (' \\forall ' X ' ' C)) :-
     !,
-    rewrite(A, J, K, C).  % Garder le même compteur
+    rewrite(A, J, K, C).  % Keep the same counter
 
 rewrite((?[X]:A), J, K, (' \\exists ' X ' ' C)) :-
     !,
-    rewrite(A, J, K, C).  % Garder le même compteur
+    rewrite(A, J, K, C).  % Keep the same counter
 % =========================================================================
-% SIMPLIFICATION ELEGANTE DES PREDICATS
+% ELEGANT PREDICATE SIMPLIFICATION
 % P(x,y,z) -> Pxyz for all predicates
 % =========================================================================
 % --- Replace the previous "concatenate predicate name and args" clause by this safer version.
@@ -434,6 +440,8 @@ simple_term(X) :-
     atomic(X), !.
 simple_term(X) :-
     var(X), !.
+simple_term(f_sk(_)) :-
+    !.
 simple_term(f_sk(_,_)) :-
     !.
 simple_term(X) :-
@@ -509,6 +517,11 @@ rewrite_term(V, J, K, V) :-
     rewrite_name(J, V),
     K is J+1.
 
+rewrite_term(f_sk(K), J, J, N) :-
+    integer(K),
+    !,
+    rewrite_name(K, N).
+
 rewrite_term(f_sk(K,_), J, J, N) :-
     !,
     rewrite_name(K, N).
@@ -563,16 +576,6 @@ toggle_code(X, X).
 % =========================================================================
 % SYSTEME PREPARE
 % =========================================================================
-
-prepare_sequent(PremissesList => Conclusion, PreparedPremisses, PreparedConclusion) :-
-    is_list(PremissesList),
-    !,
-    prepare_premisses_list(PremissesList, PreparedPremisses),
-    prepare(Conclusion, [], PreparedConclusion).
-
-prepare_sequent(Premisses => Conclusion, [PreparedPremisses], PreparedConclusion) :-
-    prepare(Premisses, [], PreparedPremisses),
-    prepare(Conclusion, [], PreparedConclusion).
 
 prepare_premisses_list([], []) :- !.
 prepare_premisses_list([H|T], [PreparedH|PreparedT]) :-
@@ -667,20 +670,10 @@ lambda_has('C'(P,_,_), W) :-
 % Determine proof type (theorem or sequent)
 % RENAMED to avoid conflict with proof_type/2 from driver
 % This function analyzes the STRUCTURE of a G4 proof, not the syntax of a formula
-proof_structure_type(Proof, Type) :-
-    proof_premisses(Proof, Premisses),
-    (   Premisses = [] 
-    ->  Type = theorem
-    ;   Type = sequent
-    ).
-
-% NOTE: If proof_structure_type is used somewhere, update the calls.
-% Currently, it does not seem to be called anywhere in this file.
-
 % Generate Fitch commands according to type and position
 fitch_prefix(sequent, LineNum, TotalPremisses, Prefix) :-
-    (   LineNum =< TotalPremisses 
-    ->  (   LineNum = TotalPremisses 
+    (   LineNum =< TotalPremisses
+    ->  (   LineNum = TotalPremisses
         ->  Prefix = '\\fj '  % Big flag for last premiss
         ;   Prefix = '\\fa '  % Normal line for premisses
         )
@@ -688,7 +681,7 @@ fitch_prefix(sequent, LineNum, TotalPremisses, Prefix) :-
     ).
 
 fitch_prefix(theorem, Depth, _, Prefix) :-
-    (   Depth > 0 
+    (   Depth > 0
     ->  Prefix = '\\fa \\fh '  % Small flag for hypotheses
     ;   Prefix = '\\fa '       % Ligne normale au niveau 0
     ).
@@ -704,14 +697,6 @@ fitch_prefix(theorem, Depth, _, Prefix) :-
 % =========================================================================
 % RENDER LATEX FORMULA - Unified with write_formula_with_parens
 % =========================================================================
-% Simply delegate to the unified formatting system
-
-render_latex_formula(Formula) :-
-    write_formula_with_parens(Formula).
-
-render_latex_with_parens(Formula, Context) :-
-    write_with_context(Formula, Context).
-
 % =========================================================================
 % ASQ REPLACEMENT HELPER
 % =========================================================================
