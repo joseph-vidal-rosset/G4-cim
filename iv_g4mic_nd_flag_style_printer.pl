@@ -422,7 +422,8 @@ fitch_g4_proof(lex((Premisses > [Goal]), SubProof), Context, Scope, CurLine, Nex
     select((?[Z-X]:Body), Premisses, _),
     find_context_line(?[Z-X]:Body, Context, ExistLine),
     extract_witness(SubProof, Witness),
-    ( member(_:Witness, Context) ->
+    % Check if witness already in context (structurally)
+    ( witness_in_context(Witness, Context) ->
         fitch_g4_proof(SubProof, Context, Scope, CurLine, NextLine, ResLine, VarIn, VarOut)
     ; WitLine is CurLine + 1,
       NewScope is Scope + 1,
@@ -603,7 +604,6 @@ fitch_g4_proof(eq_trans_chain(_G>D), _Context, Scope, CurLine, NextLine, ResLine
 % =========================================================================
 fitch_g4_proof(UnknownRule, _Context, _Scope, CurLine, CurLine, CurLine, VarIn, VarIn) :-
     format('% WARNING: Unknown rule ~w~n', [UnknownRule]).
-
 % =========================================================================
 % END OF FLAG STYLE PRINTER
 % =========================================================================

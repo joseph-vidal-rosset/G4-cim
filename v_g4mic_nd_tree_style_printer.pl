@@ -1,6 +1,8 @@
 % =========================================================================
 % NATURAL DEDUCTION PRINTER IN TREE STYLE
 % =========================================================================
+:- dynamic fitch_line/4.
+:- dynamic abbreviated_line/1.
 % =========================================================================
 % DISPLAY PREMISS LIST FOR TREE STYLE
 % =========================================================================
@@ -231,7 +233,11 @@ build_tree_from_just(lex(ExistLine, WitNum, GoalNum), _LineNum, Formula, FitchLi
 build_tree_from_just(rex(WitLine), _LineNum, Formula, FitchLines, unary_node(rex, Formula, SubTree)) :-
     !, build_buss_tree(WitLine, FitchLines, SubTree).
 
-% L∀ (Forall Elim)
+% L∀ (Forall Elim) - Special case when UnivLine = 0 (not found in context)
+build_tree_from_just(lall(0), _LineNum, Formula, _FitchLines, axiom_node(Formula)) :-
+    !.
+
+% L∀ (Forall Elim) - Normal case
 build_tree_from_just(lall(UnivLine), _LineNum, Formula, FitchLines, unary_node(lall, Formula, SubTree)) :-
     !, build_buss_tree(UnivLine, FitchLines, SubTree).
 

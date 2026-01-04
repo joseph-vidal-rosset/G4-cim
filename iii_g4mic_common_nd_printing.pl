@@ -172,9 +172,16 @@ find_context_line(![Z-_]:SearchBody, Context, LineNumber) :-
         ContextFormula = (![Z]:ContextBody),
         formulas_equivalent(SearchBody, ContextBody)
     ;
-        % Case 2: Context with annotation
+        % Case 2: Context with annotation - compare bodies after stripping annotations
         ContextFormula = (![Z-_]:ContextBody),
-        formulas_equivalent(SearchBody, ContextBody)
+        (
+            formulas_equivalent(SearchBody, ContextBody)
+        ;
+            % Fallback: strip all annotations and compare structurally
+            strip_annotations_deep(SearchBody, StrippedSearch),
+            strip_annotations_deep(ContextBody, StrippedContext),
+            StrippedSearch =@= StrippedContext
+        )
     ),
     !.
 
@@ -186,7 +193,14 @@ find_context_line(?[Z-_]:SearchBody, Context, LineNumber) :-
         formulas_equivalent(SearchBody, ContextBody)
     ;
         ContextFormula = (?[Z-_]:ContextBody),
-        formulas_equivalent(SearchBody, ContextBody)
+        (
+            formulas_equivalent(SearchBody, ContextBody)
+        ;
+            % Fallback: strip all annotations and compare structurally
+            strip_annotations_deep(SearchBody, StrippedSearch),
+            strip_annotations_deep(ContextBody, StrippedContext),
+            StrippedSearch =@= StrippedContext
+        )
     ),
     !.
 
@@ -423,14 +437,23 @@ find_disj_context(L, R, Context, Line) :-
     ).
 
 extract_witness(SubProof, Witness) :-
-    SubProof =.. [Rule|Args],
+    SubProof =.. [_Rule|Args],
     Args = [(Prem > _)|_],
-    ( member(Witness, Prem), contains_skolem(Witness),
-      ( Rule = rall ; Rule = lall ; \+ is_quantified(Witness) )
-    ), !.
+    % Find first witness with Skolem
+    member(Witness, Prem),
+    contains_skolem(Witness),
+    !.
 extract_witness(SubProof, Witness) :-
     SubProof =.. [_, (_ > _), SubSP|_],
     extract_witness(SubSP, Witness).
+
+% Check if witness already exists in context (structurally, ignoring annotations)
+witness_in_context(Witness, Context) :-
+    member(_:CtxFormula, Context),
+    strip_annotations_deep(Witness, StrippedWitness),
+    strip_annotations_deep(CtxFormula, StrippedCtx),
+    StrippedWitness =@= StrippedCtx,
+    !.
 
 is_quantified(![_-_]:_) :- !.
 is_quantified(?[_-_]:_) :- !.

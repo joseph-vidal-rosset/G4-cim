@@ -15,17 +15,11 @@ member_check(Term, List) :-
     Term =@= Elem,
     !.
 
-% TABLING: Memoization to avoid redundant computations
-:- table g4mic_proves/7.    % ← CETTE UNIQUE LIGNE
-
-% g4mic_proves/7 -
-% g4mic_proves(Sequent, FreeVars, Threshold, SkolemIn, SkolemOut, LogicLevel, Proof)
-% LogicLevel: minimal | intuitionistic | classical
 %==========================================================================
-% AXIOMS
-%=========================================================================
-% O.0 Ax
-g4mic_proves(Gamma > Delta, _, _, SkolemIn, SkolemIn, _, ax(Gamma>Delta, ax)) :-
+% AXIOM - SEPARATE PREDICATE (NOT TABLED)
+%==========================================================================
+% Must be tested BEFORE any tabled rules to avoid caching non-axiomatic proofs
+g4mic_ax(Gamma > Delta, _, _, SkolemIn, SkolemIn, _, ax(Gamma>Delta, ax)) :-
     member(A, Gamma),
     A\=(_&_),
     A\=(_|_),
@@ -34,6 +28,19 @@ g4mic_proves(Gamma > Delta, _, _, SkolemIn, SkolemIn, _, ax(Gamma>Delta, ax)) :-
     A\=(?_),
     Delta = [B],
     unify_with_occurs_check(A, B).
+
+% TABLING: Memoization to avoid redundant computations
+:- table g4mic_proves/7.
+
+% g4mic_proves/7 -
+% g4mic_proves(Sequent, FreeVars, Threshold, SkolemIn, SkolemOut, LogicLevel, Proof)
+% LogicLevel: minimal | intuitionistic | classical
+%==========================================================================
+% Entry point: test axiom FIRST (non-tabled), then other rules (tabled)
+%==========================================================================
+g4mic_proves(Seq, FV, Th, SI, SO, LL, Proof) :-
+    g4mic_ax(Seq, FV, Th, SI, SO, LL, Proof), !.
+
 % 0.1 L-bot
 g4mic_proves(Gamma>Delta, _, _, SkolemIn, SkolemIn, LogicLevel, lbot(Gamma>Delta, #)) :-
     member(LogicLevel, [intuitionistic, classical]),

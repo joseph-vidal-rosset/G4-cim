@@ -2002,14 +2002,48 @@ g4mic_decides(Formula) :-
     subst_neg(F0, F1),
     subst_bicond(F1, F2),
 
-    % Check for classical patterns first (optimization)
-    ( is_classical_pattern(F2) ->
-        write('🔍 Classical pattern detected → Using classical logic'), nl,
-        time(provable_at_level([] > [F2], classical, Proof)),
-        ( is_antisequent_proof(Proof) ->
-            write('Refuted (invalid formula)'), nl, fail
+    % Follow the same logic progression as prove/1
+    (   F2 = ((A => #) => #), A \= (_ => #)  ->
+        % Double negation detected - try constructive first
+        write('🔍 Double negation detected → Trying constructive logic first'), nl,
+        ((time(provable_at_level([] > [F2], constructive, Proof))) ->
+            ((time(provable_at_level([] > [F2], minimal, _))) ->
+                write('Valid in minimal logic'), nl
+            ;
+                ( proof_uses_lbot(Proof) ->
+                    write('Valid in intuitionistic logic'), nl
+                ;
+                    write('Valid in intuitionistic logic'), nl
+                )
+            )
         ;
-            write('Valid in classical logic'), nl
+            time(provable_at_level([] > [F2], classical, Proof)),
+            ( is_antisequent_proof(Proof) ->
+                write('Refuted (invalid formula)'), nl, fail
+            ;
+                write('Valid in classical logic'), nl
+            )
+        )
+    ; is_classical_pattern(F2) ->
+        % Classical pattern detected - but still try constructive first!
+        write('🔍 Classical pattern detected → Trying constructive logic first'), nl,
+        ((time(provable_at_level([] > [F2], constructive, Proof))) ->
+            ((time(provable_at_level([] > [F2], minimal, _))) ->
+                write('Valid in minimal logic'), nl
+            ;
+                ( proof_uses_lbot(Proof) ->
+                    write('Valid in intuitionistic logic'), nl
+                ;
+                    write('Valid in intuitionistic logic'), nl
+                )
+            )
+        ;
+            time(provable_at_level([] > [F2], classical, Proof)),
+            ( is_antisequent_proof(Proof) ->
+                write('Refuted (invalid formula)'), nl, fail
+            ;
+                write('Valid in classical logic'), nl
+            )
         )
     ;
         % Normal progression: minimal → intuitionistic → classical
@@ -2019,11 +2053,15 @@ g4mic_decides(Formula) :-
             ;
                 write('Valid in minimal logic'), nl
             )
-        ; time(provable_at_level([] > [F2], intuitionistic, Proof)) ->
+        ; time(provable_at_level([] > [F2], constructive, Proof)) ->
             ( is_antisequent_proof(Proof) ->
                 write('Refuted (invalid formula)'), nl, fail
             ;
-                write('Valid in intuitionistic logic'), nl
+                ( proof_uses_lbot(Proof) ->
+                    write('Valid in intuitionistic logic'), nl
+                ;
+                    write('Valid in intuitionistic logic'), nl
+                )
             )
         ; time(provable_at_level([] > [F2], classical, Proof)) ->
             ( is_antisequent_proof(Proof) ->
@@ -2207,17 +2245,11 @@ member_check(Term, List) :-
     Term =@= Elem,
     !.
 
-% TABLING: Memoization to avoid redundant computations
-:- table g4mic_proves/7.    % ← CETTE UNIQUE LIGNE
-
-% g4mic_proves/7 -
-% g4mic_proves(Sequent, FreeVars, Threshold, SkolemIn, SkolemOut, LogicLevel, Proof)
-% LogicLevel: minimal | intuitionistic | classical
 %==========================================================================
-% AXIOMS
-%=========================================================================
-% O.0 Ax
-g4mic_proves(Gamma > Delta, _, _, SkolemIn, SkolemIn, _, ax(Gamma>Delta, ax)) :-
+% AXIOM - SEPARATE PREDICATE (NOT TABLED)
+%==========================================================================
+% Must be tested BEFORE any tabled rules to avoid caching non-axiomatic proofs
+g4mic_ax(Gamma > Delta, _, _, SkolemIn, SkolemIn, _, ax(Gamma>Delta, ax)) :-
     member(A, Gamma),
     A\=(_&_),
     A\=(_|_),
@@ -2226,6 +2258,19 @@ g4mic_proves(Gamma > Delta, _, _, SkolemIn, SkolemIn, _, ax(Gamma>Delta, ax)) :-
     A\=(?_),
     Delta = [B],
     unify_with_occurs_check(A, B).
+
+% TABLING: Memoization to avoid redundant computations
+:- table g4mic_proves/7.
+
+% g4mic_proves/7 -
+% g4mic_proves(Sequent, FreeVars, Threshold, SkolemIn, SkolemOut, LogicLevel, Proof)
+% LogicLevel: minimal | intuitionistic | classical
+%==========================================================================
+% Entry point: test axiom FIRST (non-tabled), then other rules (tabled)
+%==========================================================================
+g4mic_proves(Seq, FV, Th, SI, SO, LL, Proof) :-
+    g4mic_ax(Seq, FV, Th, SI, SO, LL, Proof), !.
+
 % 0.1 L-bot
 g4mic_proves(Gamma>Delta, _, _, SkolemIn, SkolemIn, LogicLevel, lbot(Gamma>Delta, #)) :-
     member(LogicLevel, [intuitionistic, classical]),
