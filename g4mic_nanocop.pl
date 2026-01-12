@@ -1,28 +1,84 @@
 % =========================================================================
-% OPERATOR DECLARATIONS - Unified for g4mic + nanoCop + TPTP
+% OPERATOR DECLARATIONS - Unified for g4mic + nanocop + TPTP
 % =========================================================================
 :- use_module(library(lists)).
 :- use_module(library(statistics)).
 :- use_module(library(terms)).
-:- [minimal_driver].  % To use nanoCop as filter
+:- [minimal_driver].  % To translate nanocop into g4mic and to  use nanocop as filter
 
 % =======================================================================================================================
-% NANOCOP WRAPPER - (nanoCop as Filter: a formula that is invalid according to nanoCop is not submitted to g4mic)
+% NANOCOP WRAPPER - (nanocop as Filter: a formula that is invalid according to nanocop is not submitted to g4mic)
 % =======================================================================================================================
 
 %  WASM compatible version
-nanoCop_decides_silent(Formula) :-
+nanocop_decides_silent(Formula) :-
     current_prolog_flag(occurs_check, OriginalFlag),
     %  call inference limit instead of time limit
     catch(
         setup_call_cleanup(
             true,
-            call_with_inference_limit(nanoCop_decides(Formula), 500000, _Result),
+            call_with_inference_limit(nanocop_decides(Formula), 500000, _Result),
             set_prolog_flag(occurs_check, OriginalFlag)
         ),
         _Error,
         (set_prolog_flag(occurs_check, OriginalFlag), fail)
     ).
+
+% =========================================================================
+% NANOCOP REFUTATION ANALYSIS
+% =========================================================================
+
+% Analyser et afficher la réfutation nanocop
+nanocop_refutation_analysis(Formula) :-
+    nl,
+    write('❌ INVALID (nanoCoP).'), nl,
+
+    % Construire la matrice
+    translate_formula(Formula, InternalFormula),
+    Problem1 = (~InternalFormula),
+    leancop_equal(Problem1, Problem2),
+
+    % Essayer de prouver (va échouer)
+    \+ prove2(Problem2, [cut,comp(7)], _Proof),
+
+    % Afficher la matrice
+    bmatrix(Problem2, [cut,comp(7)], Matrix),
+    write(' === RAW MATRIX CONSTRUCTION ==='), nl,
+    write('    '), portray_clause(Matrix), nl, nl,
+
+    % Analyser le chemin ouvert (contre-modèle)
+    extract_open_path(Matrix, OpenPath),
+    write(' === RAW OPEN PATH ==='), nl,
+    write('    '), portray_clause(OpenPath), nl, nl,
+
+    % Afficher les prémisses pour réfutation
+    write(' 🎯 PREMISS FOR REFUTATION :'), nl, nl,
+    extract_and_display_assignments(OpenPath),
+    nl.
+
+% Extraire un chemin ouvert de la matrice
+extract_open_path(Matrix, OpenPath) :-
+    findall(Lit, (member((_^_)^_: Literals, Matrix), member(Lit, Literals)), AllLits),
+    include(is_negative_literal, AllLits, OpenPath).
+
+is_negative_literal(- _).
+is_negative_literal((_ => #)).
+
+% Extraire et afficher les assignations
+extract_and_display_assignments(OpenPath) :-
+    findall(Atom=Value, literal_to_assignment(OpenPath, Atom, Value), Assignments),
+    ( Assignments \= [] ->
+        forall(member(A=V, Assignments),
+               format('     ~w = ~w~n', [A, V]))
+    ;
+        write('     (no direct assignments found)'), nl
+    ).
+
+% Convertir un littéral en assignation
+literal_to_assignment([- A|_], A, '⊤') :- atomic(A), !.
+literal_to_assignment([(A => #)|_], A, '⊤') :- atomic(A), !.
+literal_to_assignment([_|Rest], Atom, Value) :-
+    literal_to_assignment(Rest, Atom, Value).
 
 % -------------------------------------------------------------------------
 % CORE LOGICAL OPERATORS (shared by all)
@@ -91,8 +147,8 @@ show_banner :-
 
     write('╔═══════════════════════════════════════════════════════════════════╗'), nl,
     write('║                                                                   ║'), nl,
-    write('🎓🎓🎓            G4-mic v1.0 with nanoCop 2.0 Filter          🎓🎓🎓 '), nl,
-    write('🎓🎓🎓(Minimal, intuitionistic and classical First-Order Logic)🎓🎓🎓'), nl,
+    write('🎓🎓🎓      G4-mic v1.0 and nanoCoP 2.0 - Two provers for      🎓🎓🎓 '), nl,
+    write('🎓🎓🎓 minimal, intuitionistic and classical First-Order Logic 🎓🎓🎓'), nl,
     write('║                                                                   ║'), nl,
     write('╠═══════════════════════════════════════════════════════════════════╣'), nl,
     write('║                                                                   ║'), nl,
@@ -103,12 +159,12 @@ show_banner :-
     write('╠═══════════════════════════════════════════════════════════════════╣'), nl,
     write('║                                                                   ║'), nl,
     write('║   📝  Usage:                                                      ║'), nl,
-    write('║     • prove(Formula).        → proof in 3 styles + validation     ║'), nl,
-    write('║     • g4mic_decides(Formula) → concise mode                       ║'), nl,
-    write('║     • decide(Formula)        → alias for g4mic_decides            ║'), nl,
-    write('║     • nanoCop_decides(F)     → test Formula with nanoCop only     ║'), nl,
-    write('║     • help.                  → show detailed help                 ║'), nl,
-    write('║     • examples.              → show formula examples              ║'), nl,
+    write('║     • prove(Formula).          → proof in 3 styles + validation   ║'), nl,
+    write('║     • decide(Formula)          → concise mode                     ║'), nl,
+    write('║     • nanocop_proves(Formula)  → nanoCoP only - verbose mode      ║'), nl,
+    write('║     • nanocop_decides(Formula) → nanoCoP only - concise mode      ║'), nl,
+    write('║     • help.                    → show detailed help               ║'), nl,
+    write('║     • examples.                → show formula examples            ║'), nl,
     write('║                                                                   ║'), nl,
     write('║   💡  Remember: End each request with a dot!                      ║'), nl,
     write('║                                                                   ║'), nl,
@@ -331,7 +387,32 @@ prove(G > D) :-
 % BICONDITIONAL - Complete corrected section (grouped by proof style)
 % =========================================================================
 
-prove(Left <=> Right) :- !,
+prove(Left <=> Right) :-
+    % ÉGALITÉ : ROUTER VERS NANOCOP (EXCLUSIF)
+    g4mic_contains_equality_direct(Left <=> Right),
+    !,
+
+    nl,
+    write('╔═══════════════════════════════════════════════════════════╗'), nl,
+    write('║      🔍 EQUALITY DETECTED → USING NANOCOP ENGINE          ║'), nl,
+    write('╚═══════════════════════════════════════════════════════════╝'), nl,
+    nl,
+
+    validate_and_warn(Left <=> Right, _),
+
+    write('🔄 Calling nanocop prover...'), nl, nl,
+
+    % APPEL DIRECT à nanocop_proves/1 - C'EST TOUT !
+    nanocop_proves(Left <=> Right),
+
+    write('═══════════════════════════════════════════════════════════════'), nl,
+    write('✅ Q.E.D.  '), nl, nl,!.
+
+%  ALTERNATIVE Clause - no equality: g4mic
+
+prove(Left <=> Right) :-
+    \+ g4mic_contains_equality_direct(_Letf <=> Right),  % Exclure égalité
+    validate_and_warn(Left <=> Right, _ValidatedFormula),
     % Check if user meant sequent equivalence (<>) instead of biconditional (<=>)
     ( (is_list(Left) ; is_list(Right)) ->
         nl,
@@ -352,12 +433,31 @@ prove(Left <=> Right) :- !,
         fail
     ;
         % ═══════════════════════════════════════════════════════════════
-        % PHASE 1 & 2: G4MIC PROOF SEARCH (both directions)
+        % FILTRE NANOCOP (comme prove(Formula))
         % ═══════════════════════════════════════════════════════════════
-        % Normal biconditional processing
         validate_and_warn(Left, _),
         validate_and_warn(Right, _),
 
+        % FILTRE NANOCOP (Version WASM)
+        current_prolog_flag(occurs_check, OriginalFlag),
+        ( catch(
+              setup_call_cleanup(
+                  true,
+                  % On utilise ici aussi la limite d'inférences
+                  call_with_inference_limit(nanocop_decides(Left <=> Right), 500000, _),
+                  set_prolog_flag(occurs_check, OriginalFlag)
+              ),
+              _,
+              (set_prolog_flag(occurs_check, OriginalFlag), fail)
+          ) ->
+          true
+        ;
+        nl, !, fail
+        ),
+
+        % ═══════════════════════════════════════════════════════════════
+        % PHASE 1 & 2: g4mic PROOF SEARCH (both directions)
+        % ═══════════════════════════════════════════════════════════════
         % Test direction 1
         retractall(current_proof_sequent(_)),
         assertz(current_proof_sequent(Left => Right)),
@@ -496,14 +596,14 @@ prove(Left <=> Right) :- !,
         ), nl, nl,
 
         % ═══════════════════════════════════════════════════════════════
-        % PHASE 3: EXTERNAL VALIDATION (G4MIC FIRST, THEN NANOCOP)
+        % PHASE 3: EXTERNAL VALIDATION (g4mic FIRST, THEN NANOCOP)
         % ═══════════════════════════════════════════════════════════════
         write('╔══════════════════════════════════════════════════════════════╗'), nl,
         write('                  🔍 PHASE 3: VALIDATION                         '), nl,
         write('╚══════════════════════════════════════════════════════════════╝'), nl,
         nl,
 
-        % G4MIC VALIDATION (PRIMARY PROVER)
+        % g4mic VALIDATION (PRIMARY PROVER)
         write('═══════════════════════════════════════════════════════════════'), nl,
         write('🔍 g4mic_decides output'), nl,
         write('═══════════════════════════════════════════════════════════════'), nl,
@@ -518,9 +618,9 @@ prove(Left <=> Right) :- !,
 
         % NANOCOP VALIDATION (EXTERNAL VALIDATION)
         write('═══════════════════════════════════════════════════════════════'), nl,
-        write('🔍 nanoCop_decides output'), nl,
+        write('🔍 nanocop_decides output'), nl,
         write('═══════════════════════════════════════════════════════════════'), nl,
-        ( catch(time(nanoCop_decides(Left <=> Right)), _, fail) ->
+        ( catch(time(nanocop_decides(Left <=> Right)), _, fail) ->
             write('true. '), nl,
             NanoCopResult = valid
         ;
@@ -538,9 +638,9 @@ prove(Left <=> Right) :- !,
         ; G4micResult = invalid, NanoCopResult = invalid ->
             write('✅ Both provers agree: '), write('false'), nl
         ; G4micResult = valid, NanoCopResult = invalid ->
-            write('⚠️  Disagreement: g4mic=true, nanoCop=false'), nl
+            write('⚠️  Disagreement: g4mic=true, nanocop=false'), nl
         ; G4micResult = invalid, NanoCopResult = valid ->
-            write('⚠️  Disagreement: g4mic=false, nanoCop=true'), nl
+            write('⚠️  Disagreement: g4mic=false, nanocop=true'), nl
         ),
         nl, nl, !
     ).
@@ -702,9 +802,34 @@ prove([Left] <> [Right]) :- !,
 % =========================================================================
 % THEOREMS - Unified proof with 3 clear phases
 % =========================================================================
+% =========================================================================
+% THEOREMS - Unified proof with 3 clear phases
+% =========================================================================
 prove(Formula) :-
-    validate_and_warn(Formula, _ValidatedFormula),
+    % ÉGALITÉ : ROUTER VERS NANOCOP (EXCLUSIF)
+    g4mic_contains_equality_direct(Formula),
+    !,
 
+    nl,
+    write('╔═══════════════════════════════════════════════════════════╗'), nl,
+    write('║      🔍 EQUALITY DETECTED → USING NANOCOP ENGINE          ║'), nl,
+    write('╚═══════════════════════════════════════════════════════════╝'), nl,
+    nl,
+
+    validate_and_warn(Formula, _),
+
+    write('🔄 Calling nanocop prover...'), nl, nl,
+
+    % APPEL DIRECT à nanocop_proves/1 - C'EST TOUT !
+    nanocop_proves(Formula),
+
+    write('═══════════════════════════════════════════════════════════════'), nl,
+    write('✅ Q.E.D.  '), nl, nl,!.
+
+% CLAUSE ALTERNATIVE :  Pas d'égalité → flux normal g4mic
+prove(Formula) :-
+    \+ g4mic_contains_equality_direct(Formula),  % Exclure égalité
+    validate_and_warn(Formula, _ValidatedFormula),
     % ═══════════════════════════════════════════════════════════════
     % FILTRE NANOCOP (négatif uniquement)
     % ═══════════════════════════════════════════════════════════════
@@ -714,7 +839,7 @@ prove(Formula) :-
           setup_call_cleanup(
               true,
               % On utilise ici aussi la limite d'inférences
-              call_with_inference_limit(nanoCop_decides(Formula), 500000, _),
+              call_with_inference_limit(nanocop_decides(Formula), 500000, _),
               set_prolog_flag(occurs_check, OriginalFlag)
           ),
           _,
@@ -726,7 +851,7 @@ prove(Formula) :-
     ),
 
     % ═══════════════════════════════════════════════════════════════
-    % G4MIC PROOF
+    % g4mic PROOF
     % ═══════════════════════════════════════════════════════════════
     write('═══════════════════════════════════════════════════════════'), nl,
     write('  🎯 G4 PROOF FOR: '), write(Formula), nl,
@@ -765,7 +890,7 @@ prove(Formula) :-
         OutputProof = Proof
 
     ;
-        write('⚠️  g4mic failed (unexpected - nanoCop validated)'), nl,
+        write('⚠️  g4mic failed (unexpected - nanocop validated)'), nl,
         fail
     ),
 
@@ -788,7 +913,7 @@ prove(Formula) :-
     write('╚══════════════════════════════════════════════════════════════╝'), nl,
     nl,
 
-    % G4MIC VALIDATION
+    % g4mic VALIDATION
     write('═══════════════════════════════════════════════════════════════'), nl,
     write('🔍 g4mic_decides output'), nl,
     write('═══════════════════════════════════════════════════════════════'), nl,
@@ -796,16 +921,16 @@ prove(Formula) :-
         write('true.'), nl,
         G4micResult = valid
     ;
-        write('false.'), nl,
+        write('false. '), nl,
         G4micResult = invalid
     ),
     nl,
 
-    % NANOCOP VALIDATION
+    % NANOCOP VALIDATION (SILENCIEUX mais avec time/1)
     write('═══════════════════════════════════════════════════════════════'), nl,
-    write('🔍 nanoCop_decides output'), nl,
+    write('🔍 nanocop_decides output'), nl,
     write('═══════════════════════════════════════════════════════════════'), nl,
-    ( catch(time(nanoCop_decides(Formula)), _, fail) ->
+    ( catch(time(nanocop_decides(Formula)), _, fail) ->
         write('true.'), nl,
         NanoCopResult = valid
     ;
@@ -823,12 +948,11 @@ prove(Formula) :-
     ; G4micResult = invalid, NanoCopResult = invalid ->
         write('✅ Both provers agree: '), write('false'), nl
     ; G4micResult = valid, NanoCopResult = invalid ->
-        write('⚠️  Disagreement: g4mic=true, nanoCop=false'), nl
+        write('⚠️  Disagreement: g4mic=true, nanocop=false'), nl
     ; G4micResult = invalid, NanoCopResult = valid ->
-        write('⚠️  Disagreement: g4mic=false, nanoCop=true'), nl
+        write('⚠️  Disagreement: g4mic=false, nanocop=true'), nl
     ),
     nl, nl.
-
 % =========================================================================
 % HELPERS
 % =========================================================================
@@ -1520,6 +1644,8 @@ g4mic_proves(Gamma>Delta, FreeVars, Threshold, SkolemIn, SkolemOut, LogicLevel, 
 % =========================================================================
 % EQUALITY RULES
 % =========================================================================
+
+/*
 % REFLEXIVITY: |- t = t
 g4mic_proves(_Gamma > Delta, _, _, SkolemIn, SkolemIn, _, eq_refl(Delta)) :-
     Delta = [T = T],
@@ -1632,7 +1758,7 @@ find_equality_path(X, Z, Context, Visited, [X|Path]) :-
     Y \== X,
     \+ member(Y, Visited),
     find_equality_path(Y, Z, Context, [Y|Visited], Path).
-
+*/
 % Helper: verify if Formula = not^n(Target) and return n
 is_nested_negation(Target, Target, 0) :- !.
 is_nested_negation((Inner => #), Target, N) :-
@@ -4614,14 +4740,15 @@ validate_and_warn(Formula, ValidatedFormula) :-
     check_sequent_syntax_confusion(Formula, SyntaxWarnings),
 
     % Check 2: Biconditional misuse (only in FOL context)
+/*
     detect_fol_context(Formula, IsFOL),
     (   IsFOL ->
         check_bicond_misuse(Formula, BicondWarnings)
     ;   BicondWarnings = []
     ),
-
+*/
     % Combine warnings
-    append(SyntaxWarnings, BicondWarnings, AllWarnings),
+    append(SyntaxWarnings, _BicondWarnings, AllWarnings),
 
     % Handle combined warnings
     handle_warnings(AllWarnings, Mode, ValidatedFormula, Formula).
@@ -4854,7 +4981,28 @@ print_warning(warning(formula_turnstile, Msg)) :-
     write('      -> Use => for implications, > only for sequents'), nl,
     write('      -> Sequent syntax: [Premisses] > [Conclusions]'), nl.
 
+
+
+% =========================================================================
+% HELPER :  DÉTECTION D'ÉGALITÉ
+% =========================================================================
+
+
+
+g4mic_contains_equality_direct(_ = _) :- !.
+g4mic_contains_equality_direct(~A) :- !, g4mic_contains_equality_direct(A).
+g4mic_contains_equality_direct(A & B) :- !, (g4mic_contains_equality_direct(A) ; g4mic_contains_equality_direct(B)).
+g4mic_contains_equality_direct(A | B) :- !, (g4mic_contains_equality_direct(A) ; g4mic_contains_equality_direct(B)).
+g4mic_contains_equality_direct(A => B) :- !, (g4mic_contains_equality_direct(A) ; g4mic_contains_equality_direct(B)).
+g4mic_contains_equality_direct(A <=> B) :- !, (g4mic_contains_equality_direct(A) ; g4mic_contains_equality_direct(B)).
+g4mic_contains_equality_direct(![_]: A) :- !, g4mic_contains_equality_direct(A).
+g4mic_contains_equality_direct(? [_]:A) :- !, g4mic_contains_equality_direct(A).
+g4mic_contains_equality_direct(Term) :-
+    compound(Term), Term =.. [_|Args], member(Arg, Args),
+    g4mic_contains_equality_direct(Arg), !.
+g4mic_contains_equality_direct(_) :- fail.
+
 % =========================================================================
 % UTILITY: AUTO-SUGGESTION (optional feature)
 % =========================================================================
-%%% END OF G4MIC PROVER
+%%% END OF g4mic PROVER

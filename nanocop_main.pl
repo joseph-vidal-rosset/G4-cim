@@ -2,21 +2,21 @@
 %%
 %% Purpose: Call the nanoCoP core prover for a given formula
 %%
-%% Author:  Jens Otten
+%% Author:   Jens Otten
 %% Web:     www.leancop.de/nanocop/
 %%
 %% Usage:   nanocop_main(X,S,R). % proves formula in file X with
 %%                               %  settings S and returns result R
 %%
-%% Copyright: (c) 2016-2020 by Jens Otten
+%% Copyright:  (c) 2016-2020 by Jens Otten
 %% License:   GNU General Public License
 
-:- assert(prolog(swi)).  % Prolog dialect (eclipse/swi)
+: - assert(prolog(swi)).  % Prolog dialect (eclipse/swi)
 :- dynamic(axiom_path/1).
 
 % execute predicates specific to Prolog dialect
 
-:- \+ prolog(eclipse) -> true ;
+: - \+ prolog(eclipse) -> true ;
    nodbgcomp,  % switch off debugging mode
    set_flag(print_depth,10000),  % set print depth
    set_flag(variable_names,off),  % print internal variable names
@@ -30,10 +30,9 @@
    retractall(axiom_path(_)), assert(axiom_path(Path1)),
    [nanocop20_swi].  % load nanoCoP core prover
 
-% load additional nanoCoP components
-
-:- [nanocop_proof].  % load program for proof presentation
-:- [nanocop_tptp2].  % load module to support TPTP syntax
+% CRITICAL FIX: Load in correct order
+:- [nanocop_tptp2].  % load TPTP support FIRST (declares operators)
+:- [nanocop_proof].  % load proof presentation SECOND (uses operators)
 
 %%% call the nanoCoP core prover
 

@@ -1,6 +1,6 @@
 %% File: nanocop20_swi.pl  -  Version: 2.0  -  Date: 1 May 2021
 %%
-%% Purpose: nanoCoP: A Non-clausal Connection Prover
+%% Purpose: nanocop: A Non-clausal Connection Prover
 %%
 %% Author:  Jens Otten
 %% Web:     www.leancop.de/nanocop/
@@ -20,8 +20,10 @@
 
 :- op(1130,xfy,<=>). :- op(1110,xfy,=>). :- op(500, fy,'~').
 :- op( 500, fy,all). :- op( 500, fy,ex). :- op(500,xfy,:).
+% : - op(200,xfy,^).    % ← AJOUTER CETTE LIGNE pour indexation (I^K)^V
 
 :- [operators].
+
 % -----------------------------------------------------------------
 % prove(F,Proof) - prove formula F
 
@@ -29,12 +31,10 @@
 
 prove(F,Proof) :- prove2(F,[cut,comp(7)],Proof).
 
-/*  the following nanoCop code
+/*
 prove2(F,Set,Proof) :-
     bmatrix(F,Set,Mat), retractall(lit(_,_,_,_)),
     assert_matrix(Mat), prove(Mat,1,Set,Proof).
-
-is changed for :
 */
 % --- Semantic Interpreter (English & Skolem Cleanup) ---
 g4mic_interpret_path([], []).
@@ -71,19 +71,52 @@ prove2(F, Set, Proof) :-
         format('~n✅ VALID (nanoCoP).~n')
     ;   format('~n❌ INVALID (nanoCoP).~n'),
         nb_getval(g4mic_matrix, G4Mat),
-        format(' === RAW MATRIX CONSTRUCTION ===~n ~w~n', [G4Mat]),
-        (member((_^_)^_:StartCla, G4Mat) ->
-            format('~n === RAW OPEN PATH ===~n ~w~n', [StartCla]),
-            g4mic_interpret_path(StartCla, CounterModel),
-            format('~n 🎯 COUNTER-MODEL INTERPRETATION :~n'),
-            format(' { ~w }~n', [CounterModel])
-        ; true),
+        write(' === RAW MATRIX CONSTRUCTION ==='), nl,
+        write('    '), portray_clause(G4Mat), nl, nl,
+
+        % Gestion du counter-model
+        (member((_^_)^_: StartCla, G4Mat) ->
+            write(' === RAW OPEN PATH ==='), nl,
+            write('    '), portray_clause(StartCla), nl, nl,
+
+            % Détecter structure complexe AVANT d'essayer
+            ( is_nested_axiom_structure(StartCla) ->
+                % Structure complexe (UNA)
+                nl,
+                write(' 🎯 COUNTER-MODEL :    (complex axiom structure)'), nl,
+                write('    The formula is contradictory with the added axioms.'), nl,
+                write('    Raw path above shows the open branch. '), nl,
+                nl
+            ;
+                % Structure simple :  générer le pretty counter-model
+                ( catch(
+                    (g4mic_interpret_path(StartCla, CounterModel),
+                     format('~n 🎯 PREMISS FOR REFUTATION: ~n~n'),
+                     pretty_print_countermodel(CounterModel)),
+                    _Error,
+                    (nl, write(' 🎯 PREMISS FOR REFUTATION :    (interpretation failed)'), nl, nl)
+                  ) ->
+                    true
+                ;
+                    nl, write(' 🎯 PREMISS FOR REFUTATION :   (unable to generate)'), nl, nl
+                )
+            )
+        ;
+            true
+        ),
         fail
     ).
 
+%% is_nested_axiom_structure(+Term)
+%% Détecte les structures avec axiomes imbriqués (UNA, etc.)
+is_nested_axiom_structure([H|_]) :-
+    is_list(H), !.
+is_nested_axiom_structure([H|_]) :-
+    compound(H),
+    H = (_^_: _), !.
 
 
-% start rule  (nanoCop code again)
+% start rule  (nanocop code again !!!!!!!!)
 prove(Mat,PathLim,Set,[(I^0)^V:Proof]) :-
     ( member(scut,Set) -> ( append([(I^0)^V:Cla1|_],[!|_],Mat) ;
         member((I^0)^V:Cla,Mat), positiveC(Cla,Cla1) ) -> true ;
@@ -267,3 +300,57 @@ univar(F,Q,F1) :-
 delete2([],_,[]).
 delete2([X|T],Y,T1) :- X==Y, !, delete2(T,Y,T1).
 delete2([X|T],Y,[X|T1]) :- delete2(T,Y,T1).
+
+
+% =========================================================================
+% PRETTY-PRINTER FOR COUNTER-MODELS (minimaliste)
+% =========================================================================
+
+%% pretty_print_countermodel(+Model)
+pretty_print_countermodel([]) :-
+    write('     ∅'), nl, nl, !.
+
+pretty_print_countermodel(Model) :-
+    is_list(Model),
+    Model \= [],
+    ! ,
+    write('     '),
+    format_model_compact(Model),
+    nl, nl.
+
+pretty_print_countermodel(Model) :-
+    format('     ~w~n~n', [Model]).
+
+%% format_model_compact(+List)
+%% Affiche le modèle sur une ligne :  a = ⊤, b = ⊥, ...
+format_model_compact([Interp]) :-
+    ! ,
+    format_compact_assignment(Interp).
+
+format_model_compact([Interp|Rest]) :-
+    format_compact_assignment(Interp),
+    write(', '),
+    format_model_compact(Rest).
+
+%% format_compact_assignment(+Assignment)
+%% Formate une assignation :  a = ⊤ ou p(x) = ⊥
+format_compact_assignment((Atom = Value)) :-
+    Atom = (A = B),  % Cas égalité
+    !,
+    format_value(Value, DisplayValue),
+    format('(~w = ~w) = ~w', [A, B, DisplayValue]).
+
+format_compact_assignment((Pred = Value)) :-
+    format_value(Value, DisplayValue),
+    format('~w = ~w', [Pred, DisplayValue]).
+
+format_compact_assignment(Other) :-
+    format('~w', [Other]).
+
+%% format_value(+Value, -DisplayValue)
+%% Convertit True/False en ⊤/⊥
+format_value(true, '⊤') :- !.
+format_value('True', '⊤') :- !.
+format_value(false, '⊥') :- !.
+format_value('False', '⊥') :- !.
+format_value(V, V).

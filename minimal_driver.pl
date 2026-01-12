@@ -1,95 +1,98 @@
-%% File: minimal_driver.pl  -  Version: 3.0
-%%
-%% Purpose: Minimal interface for nanoCoP (CLASSICAL ONLY - no nanoCop-i)
-%% Usage:   nanoCop_decides(Formula).
-%%
-%% Author: Joseph Vidal-Rosset
-%% Based on: nanoCoP by Jens Otten
-%% Version 3.0: Removed nanoCop-i, only classical nanoCop
-% =========================================================================
+%% File: minimal_driver_equal.pl  -  Version: 7.3 FINAL (time seulement dans proves)
+
+:-style_check(-singleton).
+
+:-[nanocop20_swi].
+:-[nanocop_proof].
+:-[nanocop_tptp2].
+
+% Activer le format d'explication complète d'Otten
+:-retractall(proof(_)).
+:-assert(proof(readable)).
+
+:-dynamic g4mic_silent_mode/0.
 
 % =========================================================================
-% LOADING REQUIRED MODULES
+% MAIN INTERFACE
 % =========================================================================
-:- catch([system_check], _, true).
 
-% Load nanoCoP core (CLASSICAL ONLY)
-:- catch([nanocop20_swi], _,
-        format('WARNING: nanoCoP core not found!~n')).
+nanocop_proves(Formula) :-
+    % Forcer l'affichage
+    retractall(g4mic_silent_mode),
 
-% CRITICAL: Load nanocop_tptp2 for equality axioms
-:- catch([nanocop_tptp2], _,
-    format('WARNING: nanocop_tptp2 not found - equality support disabled!~n')).
+    % Limite d'inférences avec LOGIQUE CORRECTE
+    call_with_inference_limit(
+        (
+            % Détecter l'égalité AVANT traduction
+            (nanocop_contains_equality(Formula) ->
+                HasEquality = true
+            ;
+                HasEquality = false
+            ),
 
-% =========================================================================
-% MAIN INTERFACE - CLASSICAL NANOCOP ONLY
-% =========================================================================
-% =========================================================================
-% G4MIC INTERFACE - prove/1
-% =========================================================================
-%% nanoCop_decides(+Formula) - Prove formula with automatic equality axioms
-%%
-%% CRITICAL: This predicate manages occurs_check flag:
-%% - nanoCop requires occurs_check=true
-%% - g4mic requires occurs_check=false
-%% - This wrapper ensures proper isolation
-nanoCop_decides(Formula) :-
-    % Save current state
-    current_prolog_flag(occurs_check, OriginalOccursCheck),
+            translate_formula(Formula, InternalFormula),
 
-    % Force occurs_check=false for formula processing
-    set_prolog_flag(occurs_check, false),
+            % N'appeler leancop_equal QUE si égalité présente
+            (HasEquality = true ->
+                leancop_equal(InternalFormula, FormulaToProve)
+            ;
+                FormulaToProve = InternalFormula
+            ),
 
-    % Use setup_call_cleanup to guarantee proper flag management
-    setup_call_cleanup(
-        % Setup: Set occurs_check=true for nanoCop
-        set_prolog_flag(occurs_check, true),
-        % Call: execute nanoCop proof
-        nanocop_prove_core(Formula),
-        % Cleanup: Restore to false (g4mic-safe state)
-        set_prolog_flag(occurs_check, false)
+            % IMPORTANT : PAS DE NÉGATION - prove2 gère la réfutation en interne
+            ( time(prove2(FormulaToProve, [cut,comp(7)], Proof)) ->
+              Result='Theorem'
+            ;
+              Result='Non-Theorem'
+            ),
+            bmatrix(FormulaToProve, [cut,comp(7)], Matrix),
+            output_result(Formula, Matrix, Proof, Result),
+            % VÉRIFIER le résultat
+            Result='Theorem'
+        ),
+        500000,
+        InfResult
     ),
+    % VÉRIFIER SI LIMITE ATTEINTE
+    ( InfResult == inference_limit_exceeded ->
+        nl,
+        write('❌ INFERENCE LIMIT EXCEEDED (500,000 inferences)'), nl,
+        write('   Formula too complex or invalid'), nl,
+        nl,
+        fail
+    ;
+        true
+    ),!.
 
-    % Final cleanup: restore original state
-    set_prolog_flag(occurs_check, OriginalOccursCheck).
+% =========================================================================
+% nanocop_decides/1 :   Version SILENCIEUSE (avec stats)
+% =========================================================================
 
-%% nanocop_prove_core(+Formula) - Core nanoCop logic
-%% Assumes occurs_check=true is already set
-nanocop_prove_core(Formula) :-
-    % Step 1: Detect equality BEFORE translation
+nanocop_decides(Formula) :-
+    assertz(g4mic_silent_mode),
+
+    % Détecter l'égalité AVANT traduction
     (nanocop_contains_equality(Formula) ->
         HasEquality = true
     ;
         HasEquality = false
     ),
 
-    % Step 2: Translate formula (![X]: → all X:)
     translate_formula(Formula, InternalFormula),
 
-    % Step 3: Add equality axioms AFTER translation (if needed)
+    % N'appeler leancop_equal QUE si égalité présente
     (HasEquality = true ->
-        (current_predicate(leancop_equal/2) ->
-            leancop_equal(InternalFormula, TempFormula),
-            (InternalFormula \= TempFormula ->
-                FormulaWithEq = TempFormula
-            ;
-                basic_equality_axioms(EqAxioms),
-                FormulaWithEq = (EqAxioms => InternalFormula)
-            )
-        ;
-            basic_equality_axioms(EqAxioms),
-            FormulaWithEq = (EqAxioms => InternalFormula)
-        )
+        leancop_equal(InternalFormula, FormulaToProve)
     ;
-        FormulaWithEq = InternalFormula
+        FormulaToProve = InternalFormula
     ),
 
-    % Step 4: Prove (occurs_check is true here)
-    prove2(FormulaWithEq, [cut,comp(7)], _Proof),
-    !.
+    % IMPORTANT : PAS DE NÉGATION - prove2 gère la réfutation en interne
+    prove2(FormulaToProve, [cut,comp(7)], _Proof),
+    retractall(g4mic_silent_mode), !.
 
 % =========================================================================
-% EQUALITY DETECTION
+% EQUALITY DETECTION (copié de minimal_driver.pl)
 % =========================================================================
 
 nanocop_contains_equality((_ = _)) :- !.
@@ -132,28 +135,39 @@ nanocop_contains_equality(Term) :-
 nanocop_contains_equality(_) :- fail.
 
 % =========================================================================
-% BASIC EQUALITY AXIOMS
+% OUTPUT RESULT
 % =========================================================================
 
-%% basic_equality_axioms(-Axioms)
-%% The three fundamental equality axioms
-basic_equality_axioms((
-    (all X:(X=X)),                                      % Reflexivity
-    (all X:all Y:((X=Y)=>(Y=X))),                      % Symmetry
-    (all X:all Y:all Z:(((X=Y),(Y=Z))=>(X=Z)))         % Transitivity
-)).
+output_result(Formula, Matrix, Proof, Result) :-
+    ( g4mic_silent_mode ->
+        true
+    ;
+        nl,
+        format('╔═══════════════════════════════════════════════════════════════╗~n'),
+        format('║                    NANOCOP THEOREM PROVER                     ║~n'),
+        format('╚═══════════════════════════════════════════════════════════════╝~n~n'),
+        write('Formula:         '), write(Formula), nl,
+        write('Result:    '), write(Result), nl, nl,
+        ( var(Proof) ->
+            write('No proof found.      '), nl
+        ;
+            write('═══════════════════════════════════════════════════════════'), nl,
+            nanocop_proof(Matrix, Proof),
+            write('═══════════════════════════════════════════════════════════'), nl
+        ), nl
+    ),!.
 
 % =========================================================================
-% FORMULA TRANSLATION
+% FORMULA TRANSLATION - COPIED EXACTLY FROM minimal_driver.pl
 % =========================================================================
 
 %% translate_formula(+InputFormula, -OutputFormula)
-%% Translates from TPTP syntax to nanoCoP internal syntax
+%% Translates from TPTP syntax to nanocop internal syntax
 translate_formula(F, F_out) :-
     translate_operators(F, F_out).
 
 % =========================================================================
-% OPERATOR TRANSLATION
+% OPERATOR TRANSLATION - COPIED EXACTLY FROM minimal_driver.pl
 % =========================================================================
 
 % Bottom/falsum: # is translated to ~(p0 => p0) which represents ⊥
@@ -231,16 +245,19 @@ translate_operators(Term, Term1) :-
     Term1 =.. [F|Args1].
 
 % =========================================================================
-% VARIABLE SUBSTITUTION
+% VARIABLE SUBSTITUTION - COPIED EXACTLY FROM minimal_driver.pl
 % =========================================================================
 
 %% substitute_var_in_formula(+Formula, +OldVar, +NewVar, -NewFormula)
 substitute_var_in_formula(Var, OldVar, NewVar, NewVar) :-
     atomic(Var), Var == OldVar, !.
+
 substitute_var_in_formula(Atom, _OldVar, _NewVar, Atom) :-
     atomic(Atom), !.
+
 substitute_var_in_formula(Var, _OldVar, _NewVar, Var) :-
     var(Var), !.
+
 substitute_var_in_formula(Term, OldVar, NewVar, NewTerm) :-
     compound(Term), !,
     Term =.. [F|Args],
